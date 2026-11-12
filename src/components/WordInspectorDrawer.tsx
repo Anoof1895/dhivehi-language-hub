@@ -66,13 +66,14 @@ export function WordInspectorDrawer({
   const entry = detail?.entry;
   const isKnown = entry ? knownIds.has(entry.id) : false;
   const inSrs = entry ? srsIds.has(entry.id) : false;
+  const textDir = getUiDirection(lang);
 
   return (
     <div className="fixed inset-0 z-50 flex justify-end bg-black/40 backdrop-blur-[2px]">
       <div className="fixed inset-0" onClick={onClose} aria-hidden="true" />
       <aside
-        className="relative z-10 flex h-full w-full max-w-xl flex-col border-s border-[#E4DCCE] bg-[#FAF7F2] shadow-2xl dark:border-[#213840] dark:bg-[#0B161A]"
-        dir={getUiDirection(lang)}
+        className="relative z-10 flex h-full w-full max-w-xl flex-col border-l border-[#E4DCCE] bg-[#FAF7F2] shadow-2xl dark:border-[#213840] dark:bg-[#0B161A]"
+        dir="ltr"
       >
         {/* Top bar */}
         <div className="flex items-center justify-between border-b border-[#E4DCCE] bg-white/80 px-4 py-3 backdrop-blur dark:border-[#213840] dark:bg-[#132329]/90">
@@ -88,10 +89,10 @@ export function WordInspectorDrawer({
                 ) : (
                   <ArrowRight className="h-3.5 w-3.5" />
                 )}
-                <span>{t('ފަހަތަށް', 'Back', lang)}</span>
+                <span dir={textDir}>{t('ފަހަތަށް', 'Back', lang)}</span>
               </button>
             )}
-            <span className="text-sm font-semibold text-[#52636A] dark:text-[#9BB0B8]">
+            <span dir={textDir} className="text-sm font-semibold text-[#52636A] dark:text-[#9BB0B8]">
               {t('ބަހުގެ ތަފްޞީލު', 'Word Inspector', lang)}
             </span>
           </div>
@@ -148,19 +149,21 @@ export function WordInspectorDrawer({
             <div className="space-y-6">
               {/* Headword Hero */}
               <div className="rounded-2xl border border-[#E4DCCE] bg-white p-5 shadow-xs dark:border-[#213840] dark:bg-[#132329]">
-                <div className="flex flex-wrap items-start justify-between gap-3">
+                <div dir="rtl" className="flex flex-wrap items-start justify-between gap-3">
                   <div>
-                    <h2 dir="rtl" className="font-display-thaana text-3xl font-bold text-[#142126] dark:text-[#F1F5F9]">
+                    <h2 dir="rtl" className="font-display-thaana text-right text-3xl font-bold text-[#142126] dark:text-[#F1F5F9]">
                       {entry.headword}
                     </h2>
                     {showRomanization && entry.romanized && (
-                      <p className="mt-1 font-mono text-xs tracking-wide text-[#52636A] dark:text-[#9BB0B8]" dir="ltr">
-                        /{entry.romanized}/
-                      </p>
+                      <div className="mt-1 text-right">
+                        <span className="inline-block font-mono text-xs tracking-wide text-[#52636A] dark:text-[#9BB0B8]" dir="ltr">
+                          /{entry.romanized}/
+                        </span>
+                      </div>
                     )}
                   </div>
 
-                  <div className="flex flex-wrap items-center gap-2">
+                  <div className="flex flex-wrap items-center gap-2" dir="ltr">
                     <button
                       type="button"
                       onClick={() => onAddToSrs(entry.id)}
@@ -172,7 +175,7 @@ export function WordInspectorDrawer({
                       }`}
                     >
                       <BookMarked className="h-3.5 w-3.5" />
-                      <span>
+                      <span dir={textDir}>
                         {inSrs
                           ? t('މުރާޖަޢާ ލިސްޓުގައި', 'In Review Queue', lang)
                           : t('މުރާޖަޢާއަށް ލާ', 'Study in FSRS', lang)}
@@ -189,7 +192,7 @@ export function WordInspectorDrawer({
                       }`}
                     >
                       <CheckCircle2 className="h-3.5 w-3.5" />
-                      <span>
+                      <span dir={textDir}>
                         {isKnown
                           ? t('އެނގޭ ބަހެއް (ބަދަލުކުރޭ)', 'Known (Undo)', lang)
                           : t('މި ބަސް އެނގޭ', 'Already Know', lang)}
@@ -198,13 +201,13 @@ export function WordInspectorDrawer({
                   </div>
                 </div>
 
-                <div className="mt-3">
+                <div dir="rtl" className="mt-3">
                   <MetadataBadges entry={entry} lang={lang} />
                 </div>
 
                 {/* Hyperlinked Definitions */}
                 <div className="mt-5 space-y-2.5 border-t border-[#E4DCCE]/70 pt-4 dark:border-[#213840]">
-                  <p className="text-xs font-semibold text-[#52636A] dark:text-[#9BB0B8]">
+                  <p dir={textDir} className="text-xs font-semibold text-[#52636A] dark:text-[#9BB0B8]">
                     {t('މާނަ (ކޮންމެ ބަހަކަށް ކްލިކްކޮށްގެން ހޯދޭނެ)', 'Meanings (click any highlighted word)', lang)}
                   </p>
                   <ol dir="rtl" className="space-y-2.5">

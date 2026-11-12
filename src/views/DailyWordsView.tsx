@@ -14,7 +14,13 @@ import type {
   UserSettings,
 } from '../types/dictionary.ts';
 import type { DailyProgressState } from '../lib/dailyQueue.ts';
-import { DECK_LABELS, formatBiLabel, formatCount, t } from '../lib/labels.ts';
+import {
+  DECK_LABELS,
+  formatBiLabel,
+  formatCount,
+  getUiDirection,
+  t,
+} from '../lib/labels.ts';
 import { MetadataBadges } from '../components/MetadataBadges.tsx';
 import { SenseText } from '../components/SenseText.tsx';
 
@@ -52,6 +58,7 @@ export function DailyWordsView({
   onInspectHeadword,
 }: Props) {
   const lang = settings.uiLanguage;
+  const textDir = getUiDirection(lang);
   const [expandedFamilies, setExpandedFamilies] = useState<Record<number, boolean>>({});
   const completedSet = new Set(progress?.completedIds ?? []);
   const completedCount = dailyEntries.filter((e) => completedSet.has(e.id)).length;
@@ -74,12 +81,12 @@ export function DailyWordsView({
           <div>
             <div className="inline-flex items-center gap-1.5 rounded-full bg-[#0D6E6E]/10 px-3 py-1 text-xs font-semibold text-[#0D6E6E] dark:bg-[#2DD4BF]/15 dark:text-[#2DD4BF]">
               <Sparkles className="h-3.5 w-3.5" />
-              <span>{t('މިއަދުގެ ބަސްތައް', "Today's Learning Set", lang)}</span>
+              <span dir={textDir}>{t('މިއަދުގެ ބަސްތައް', "Today's Learning Set", lang)}</span>
             </div>
-            <h1 className="font-display-thaana mt-2 text-2xl sm:text-3xl font-bold text-[#142126] dark:text-[#F1F5F9]">
+            <h1 dir={textDir} className="font-display-thaana mt-2 text-2xl sm:text-3xl font-bold text-[#142126] dark:text-[#F1F5F9]">
               {t('ދުވަހުގެ ބަސް ދަސްކުރުން', 'Daily Dhivehi Words', lang)}
             </h1>
-            <p className="mt-1 text-sm text-[#52636A] dark:text-[#9BB0B8]">
+            <p dir={textDir} className="mt-1 text-sm text-[#52636A] dark:text-[#9BB0B8]">
               {t(
                 'މޫދު އާއިލާތަކާއެކު ދުވާލަކު 1، 3 ނުވަތަ 5 ބަސް ދަސްކުރައްވާ — އެނގޭ ބަހެއް ނަމަ ވަގުތުން ބަދަލުކޮށްލެވޭނެ.',
                 'Learn 1, 3, or 5 words daily with root-word bundles. Swap any word you already know.',
@@ -93,10 +100,10 @@ export function DailyWordsView({
             <div className="flex items-center gap-2 rounded-2xl border border-[#E4DCCE] bg-[#FAF7F2] px-3.5 py-2 dark:border-[#213840] dark:bg-[#182C33]">
               <Flame className="h-5 w-5 text-[#D95D39] dark:text-[#FB923C]" />
               <div>
-                <div className="text-[11px] text-[#52636A] dark:text-[#9BB0B8]">
+                <div dir={textDir} className="text-[11px] text-[#52636A] dark:text-[#9BB0B8]">
                   {t('ސްޓްރީކް', 'Streak', lang)}
                 </div>
-                <div className="text-sm font-bold text-[#142126] dark:text-[#F1F5F9]">
+                <div dir={textDir} className="text-sm font-bold text-[#142126] dark:text-[#F1F5F9]">
                   {lang === 'en'
                     ? formatCount(streak, 'day')
                     : lang === 'dv-en'
@@ -151,9 +158,7 @@ export function DailyWordsView({
           </div>
           <div className="h-2.5 w-full overflow-hidden rounded-full bg-[#F2ECE1] dark:bg-[#182C33]">
             <div
-              className={`h-full rounded-full ${
-                lang === 'en' ? 'bg-gradient-to-r' : 'bg-gradient-to-l'
-              } from-[#0D6E6E] to-[#199A9A] transition-all duration-300 dark:from-[#2DD4BF] dark:to-[#14B8A6]`}
+              className="h-full rounded-full bg-gradient-to-r from-[#0D6E6E] to-[#199A9A] transition-all duration-300 dark:from-[#2DD4BF] dark:to-[#14B8A6]"
               style={{ width: `${pct}%` }}
             />
           </div>
@@ -225,7 +230,7 @@ export function DailyWordsView({
                 }`}
               >
                 {/* Header */}
-                <div className="flex flex-wrap items-start justify-between gap-3">
+                <div dir="rtl" className="flex flex-wrap items-start justify-between gap-3">
                   <div>
                     <div className="flex items-center gap-2.5">
                       <span className="flex h-7 w-7 items-center justify-center rounded-full bg-[#F2ECE1] text-xs font-bold text-[#0D6E6E] dark:bg-[#182C33] dark:text-[#2DD4BF]">
@@ -235,23 +240,25 @@ export function DailyWordsView({
                         type="button"
                         dir="rtl"
                         onClick={() => onInspectId(entry.id)}
-                        className="font-display-thaana cursor-pointer text-start text-2xl sm:text-3xl font-bold text-[#142126] transition hover:text-[#0D6E6E] dark:text-[#F1F5F9] dark:hover:text-[#2DD4BF]"
+                        className="font-display-thaana cursor-pointer text-right text-2xl sm:text-3xl font-bold text-[#142126] transition hover:text-[#0D6E6E] dark:text-[#F1F5F9] dark:hover:text-[#2DD4BF]"
                       >
                         {entry.headword}
                       </button>
                     </div>
                     {settings.showRomanization && entry.romanized && (
-                      <p
-                        className="mt-1 ps-9 font-mono text-xs text-[#52636A] dark:text-[#9BB0B8]"
-                        dir="ltr"
-                      >
-                        /{entry.romanized}/
-                      </p>
+                      <div className="mt-1 ps-9 text-right">
+                        <span
+                          className="inline-block font-mono text-xs text-[#52636A] dark:text-[#9BB0B8]"
+                          dir="ltr"
+                        >
+                          /{entry.romanized}/
+                        </span>
+                      </div>
                     )}
                   </div>
 
                   {/* Quick Actions */}
-                  <div className="flex flex-wrap items-center gap-2">
+                  <div className="flex flex-wrap items-center gap-2" dir="ltr">
                     {!isCompleted && (
                       <button
                         type="button"
@@ -259,7 +266,7 @@ export function DailyWordsView({
                         className="inline-flex cursor-pointer items-center gap-1.5 rounded-xl border border-[#E4DCCE] bg-[#FAF7F2] px-3 py-1.5 text-xs font-semibold text-[#52636A] transition hover:border-[#D95D39] hover:text-[#B84524] dark:border-[#213840] dark:bg-[#182C33] dark:text-[#9BB0B8] dark:hover:border-[#FB923C] dark:hover:text-[#FB923C]"
                       >
                         <RefreshCw className="h-3.5 w-3.5" />
-                        <span>{t('މި ބަސް އެނގޭ (ބަދަލުކުރޭ)', 'Already know this', lang)}</span>
+                        <span dir={textDir}>{t('މި ބަސް އެނގޭ (ބަދަލުކުރޭ)', 'Already know this', lang)}</span>
                       </button>
                     )}
 
@@ -276,12 +283,12 @@ export function DailyWordsView({
                       {isCompleted ? (
                         <>
                           <CheckCircle2 className="h-4 w-4" />
-                          <span>{t('ދަސްވެއްޖެ (FSRS ގައި)', 'Scheduled in FSRS', lang)}</span>
+                          <span dir={textDir}>{t('ދަސްވެއްޖެ (FSRS ގައި)', 'Scheduled in FSRS', lang)}</span>
                         </>
                       ) : (
                         <>
                           <BookOpenCheck className="h-4 w-4" />
-                          <span>{t('ދަސްވެއްޖެ — މުރާޖަޢާއަށް ލާ', 'Learn & Schedule', lang)}</span>
+                          <span dir={textDir}>{t('ދަސްވެއްޖެ — މުރާޖަޢާއަށް ލާ', 'Learn & Schedule', lang)}</span>
                         </>
                       )}
                     </button>
@@ -289,7 +296,7 @@ export function DailyWordsView({
                 </div>
 
                 {/* Badges */}
-                <div className="mt-3">
+                <div dir="rtl" className="mt-3">
                   <MetadataBadges entry={entry} lang={lang} />
                 </div>
 

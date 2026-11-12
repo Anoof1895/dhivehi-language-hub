@@ -121,10 +121,10 @@ export function App() {
     else root.classList.remove('dark');
   }, [settings.theme]);
 
-  // Apply UI direction, document language, and title
+  // Keep document shell direction stationary (ltr) while updating lang and title
   useEffect(() => {
     const root = document.documentElement;
-    root.dir = getUiDirection(lang);
+    root.dir = 'ltr';
     root.lang = lang === 'en' ? 'en' : 'dv';
     document.title =
       lang === 'en'
@@ -401,21 +401,29 @@ export function App() {
   const activeLangOption =
     UI_LANGUAGE_OPTIONS.find((opt) => opt.key === lang) ?? UI_LANGUAGE_OPTIONS[1];
 
+  const textDir = getUiDirection(lang);
+
   return (
     <div
       className="min-h-screen bg-[#FAF7F2] text-[#142126] dark:bg-[#0B161A] dark:text-[#F1F5F9]"
-      dir={getUiDirection(lang)}
+      dir="ltr"
     >
       {/* Top Header */}
       <header className="sticky top-0 z-30 border-b border-[#E4DCCE] bg-[#FAF7F2]/90 backdrop-blur-md dark:border-[#213840] dark:bg-[#0B161A]/90">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3 sm:px-6">
           <div className="flex items-center gap-3">
             <img src="/icon.svg" alt="" className="h-9 w-9 rounded-xl shadow-xs" />
-            <div>
-              <div className="font-display-thaana text-lg font-bold leading-snug text-[#142126] dark:text-[#F1F5F9]">
+            <div className="text-left">
+              <div
+                dir={textDir}
+                className="font-display-thaana text-left text-lg font-bold leading-snug text-[#142126] dark:text-[#F1F5F9]"
+              >
                 {t('ދިވެހި ބަހުގެ މަރުކަޒު', 'Dhivehi Language Hub', lang)}
               </div>
-              <div className="text-[11px] text-[#52636A] dark:text-[#9BB0B8]">
+              <div
+                dir={textDir}
+                className="text-left text-[11px] text-[#52636A] dark:text-[#9BB0B8]"
+              >
                 {report
                   ? lang === 'en'
                     ? `${report.canonicalEntryCount.toLocaleString()} words · Radheef`
@@ -524,9 +532,9 @@ export function App() {
                       : 'text-[#52636A] hover:bg-[#F2ECE1] hover:text-[#142126] dark:text-[#9BB0B8] dark:hover:bg-[#182C33] dark:hover:text-[#F1F5F9]'
                   }`}
                 >
-                  <span className="flex items-center gap-2.5">
-                    <Icon className="h-4 w-4" />
-                    <span>{t(item.dv, item.en, lang)}</span>
+                  <span className="flex min-w-0 items-center gap-2.5">
+                    <Icon className="h-4 w-4 shrink-0" />
+                    <span dir={textDir} className="truncate">{t(item.dv, item.en, lang)}</span>
                   </span>
                   {item.badge !== undefined && item.badge > 0 && (
                     <span
@@ -658,9 +666,9 @@ export function App() {
                 }`}
               >
                 <Icon className="h-4 w-4" />
-                <span>{lang === 'dv' ? item.dv : item.en}</span>
+                <span dir={textDir}>{lang === 'dv' ? item.dv : item.en}</span>
                 {item.badge !== undefined && item.badge > 0 && (
-                  <span className="absolute top-1.5 end-3 flex h-4 min-w-4 items-center justify-center rounded-full bg-[#D95D39] px-1 text-[10px] font-bold text-white dark:bg-[#FB923C] dark:text-[#0B161A]">
+                  <span className="absolute top-1.5 right-3 flex h-4 min-w-4 items-center justify-center rounded-full bg-[#D95D39] px-1 text-[10px] font-bold text-white dark:bg-[#FB923C] dark:text-[#0B161A]">
                     {item.badge}
                   </span>
                 )}

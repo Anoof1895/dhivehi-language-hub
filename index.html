@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="dv" dir="rtl">
+<html lang="dv" dir="ltr">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -14,13 +14,8 @@
             document.documentElement.classList.add('dark');
           }
           var savedLang = localStorage.getItem('dhivehi_hub_lang');
-          if (savedLang === 'en') {
-            document.documentElement.dir = 'ltr';
-            document.documentElement.lang = 'en';
-          } else {
-            document.documentElement.dir = 'rtl';
-            document.documentElement.lang = 'dv';
-          }
+          document.documentElement.dir = 'ltr';
+          document.documentElement.lang = savedLang === 'en' ? 'en' : 'dv';
         } catch (e) {}
       })();
     </script>

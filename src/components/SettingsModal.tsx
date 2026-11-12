@@ -84,15 +84,17 @@ export function SettingsModal({
     }
   };
 
+  const textDir = getUiDirection(lang);
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/45 p-4 backdrop-blur-[2px]">
       <div className="fixed inset-0" onClick={onClose} aria-hidden="true" />
       <div
         className="relative z-10 max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-3xl border border-[#E4DCCE] bg-[#FAF7F2] p-5 sm:p-6 shadow-2xl dark:border-[#213840] dark:bg-[#0B161A]"
-        dir={getUiDirection(lang)}
+        dir="ltr"
       >
         <div className="flex items-center justify-between border-b border-[#E4DCCE] pb-3 dark:border-[#213840]">
-          <h2 className="font-display-thaana text-xl font-bold text-[#142126] dark:text-[#F1F5F9]">
+          <h2 dir={textDir} className="font-display-thaana text-xl font-bold text-[#142126] dark:text-[#F1F5F9]">
             {t('ސެޓިންގްސް އަދި ބެކަޕް', 'Settings & Backup', lang)}
           </h2>
           <button

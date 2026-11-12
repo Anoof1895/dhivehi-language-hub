@@ -23,6 +23,7 @@ import {
   WORDCLASS_LABELS,
   formatBiLabel,
   formatCount,
+  getUiDirection,
   t,
 } from '../lib/labels.ts';
 import { latinToThaanaPhonetic } from '../lib/thaana.ts';
@@ -136,49 +137,61 @@ export function DictionaryView({
     (filters.hasFamily ? 1 : 0) +
     (filters.hasSynonyms ? 1 : 0);
 
+  const textDir = getUiDirection(lang);
+  const hasThaanaInput = /[\u0780-\u07BF]/.test(rawInput);
+  const hasLatinInput = /[A-Za-z0-9]/.test(rawInput);
+  const searchInputDir: 'ltr' | 'rtl' = hasThaanaInput
+    ? 'rtl'
+    : hasLatinInput || lang === 'en'
+    ? 'ltr'
+    : 'rtl';
+
   return (
     <div className="space-y-5">
       {/* Search Console */}
       <section className="rounded-3xl border border-[#E4DCCE] bg-white p-4 sm:p-5 shadow-xs dark:border-[#213840] dark:bg-[#132329]">
         <div className="flex flex-col gap-3">
-          <div className="relative flex items-center">
-            <Search className="pointer-events-none absolute start-3.5 h-5 w-5 text-[#52636A] dark:text-[#9BB0B8]" />
+          <div
+            dir="ltr"
+            className="flex items-center gap-2 rounded-2xl border border-[#E4DCCE] bg-[#FAF7F2] px-3.5 py-1.5 focus-within:border-[#0D6E6E] dark:border-[#213840] dark:bg-[#0B161A] dark:focus-within:border-[#2DD4BF]"
+          >
+            <Search className="h-5 w-5 shrink-0 text-[#52636A] dark:text-[#9BB0B8]" />
             <input
               type="text"
-              dir="auto"
+              dir={searchInputDir}
               value={rawInput}
               onChange={(e) => handleInputChange(e.target.value)}
               placeholder={t(
-                'ތާނަ ނުވަތަ ލެޓިންއިން ބަސް ހޯދާ (މިސާލު: ލޯބި / loabi / fathihondheli)...',
-                'Search in Thaana or Latin (e.g. ލޯބި, loabi, haharu)...',
+                '\u2067ތާނަ ނުވަތަ ލެޓިންއިން ބަސް ހޯދާ (މިސާލު: ލޯބި / \u2066loabi\u2069 / \u2066fathihondheli\u2069)...\u2069',
+                'Search in Thaana or Latin (e.g. \u2067ލޯބި\u2069, loabi, haharu)...',
                 lang
               )}
-              className="w-full rounded-2xl border border-[#E4DCCE] bg-[#FAF7F2] py-3 ps-11 pe-24 text-base text-[#142126] placeholder:text-[#52636A]/70 focus:border-[#0D6E6E] focus:outline-none dark:border-[#213840] dark:bg-[#0B161A] dark:text-[#F1F5F9] dark:focus:border-[#2DD4BF]"
+              className={`flex-1 min-w-0 bg-transparent py-1.5 text-base text-[#142126] placeholder:text-[#52636A]/70 focus:outline-none dark:text-[#F1F5F9] ${
+                searchInputDir === 'rtl' ? 'text-right' : 'text-left'
+              }`}
             />
-            <div className="absolute end-2 flex items-center gap-1">
-              {rawInput && (
-                <button
-                  type="button"
-                  onClick={() => setRawInput('')}
-                  aria-label="Clear search"
-                  className="cursor-pointer rounded-xl p-1.5 text-[#52636A] hover:bg-[#E4DCCE]/50 dark:text-[#9BB0B8]"
-                >
-                  <X className="h-4 w-4" />
-                </button>
-              )}
+            {rawInput && (
               <button
                 type="button"
-                onClick={() => setShowKeyboard((v) => !v)}
-                aria-label="Toggle Thaana keyboard"
-                className={`cursor-pointer rounded-xl p-2 transition ${
-                  showKeyboard
-                    ? 'bg-[#0D6E6E] text-white dark:bg-[#2DD4BF] dark:text-[#0B161A]'
-                    : 'text-[#52636A] hover:bg-[#F2ECE1] dark:text-[#9BB0B8] dark:hover:bg-[#182C33]'
-                }`}
+                onClick={() => setRawInput('')}
+                aria-label="Clear search"
+                className="shrink-0 cursor-pointer rounded-xl p-1.5 text-[#52636A] hover:bg-[#E4DCCE]/50 dark:text-[#9BB0B8]"
               >
-                <Keyboard className="h-4 w-4" />
+                <X className="h-4 w-4" />
               </button>
-            </div>
+            )}
+            <button
+              type="button"
+              onClick={() => setShowKeyboard((v) => !v)}
+              aria-label="Toggle Thaana keyboard"
+              className={`shrink-0 cursor-pointer rounded-xl p-2 transition ${
+                showKeyboard
+                  ? 'bg-[#0D6E6E] text-white dark:bg-[#2DD4BF] dark:text-[#0B161A]'
+                  : 'text-[#52636A] hover:bg-[#F2ECE1] dark:text-[#9BB0B8] dark:hover:bg-[#182C33]'
+              }`}
+            >
+              <Keyboard className="h-4 w-4" />
+            </button>
           </div>
 
           {/* Search Controls Bar */}
@@ -194,7 +207,7 @@ export function DictionaryView({
                 }`}
               >
                 <Sparkles className="h-3.5 w-3.5" />
-                <span>{t('ލެޓިން → ތާނަ IME', 'Live Phonetic IME', lang)}</span>
+                <span dir={textDir}>{t('ލެޓިން → ތާނަ IME', 'Live Phonetic IME', lang)}</span>
               </button>
 
               <button
@@ -207,7 +220,7 @@ export function DictionaryView({
                 }`}
               >
                 <SlidersHorizontal className="h-3.5 w-3.5" />
-                <span>
+                <span dir={textDir}>
                   {t('ފިލްޓަރު', 'Filters', lang)}
                   {activeFilterCount > 0 ? ` (${activeFilterCount})` : ''}
                 </span>
@@ -222,11 +235,11 @@ export function DictionaryView({
                   }
                   className="accent-[#0D6E6E]"
                 />
-                <span>{t('މާނައިގެ ތެރެއިން ހޯދާ', 'Search in Definitions', lang)}</span>
+                <span dir={textDir}>{t('މާނައިގެ ތެރެއިން ހޯދާ', 'Search in Definitions', lang)}</span>
               </label>
             </div>
 
-            <div className="text-xs font-medium text-[#52636A] dark:text-[#9BB0B8]">
+            <div dir={textDir} className="text-xs font-medium text-[#52636A] dark:text-[#9BB0B8]">
               {loading
                 ? t('ހޯދަނީ...', 'Searching...', lang)
                 : lang === 'en'
@@ -382,19 +395,19 @@ export function DictionaryView({
                 key={entry.id}
                 className="rounded-2xl border border-[#E4DCCE] bg-white p-4 sm:p-5 transition hover:border-[#0D6E6E]/45 dark:border-[#213840] dark:bg-[#132329] dark:hover:border-[#2DD4BF]/45"
               >
-                <div className="flex flex-wrap items-start justify-between gap-2">
-                  <div>
+                <div dir="rtl" className="flex flex-wrap items-start justify-between gap-2">
+                  <div className="flex flex-wrap items-baseline gap-2">
                     <button
                       type="button"
                       dir="rtl"
                       onClick={() => onInspectId(entry.id)}
-                      className="font-display-thaana cursor-pointer text-start text-xl sm:text-2xl font-bold text-[#142126] transition hover:text-[#0D6E6E] dark:text-[#F1F5F9] dark:hover:text-[#2DD4BF]"
+                      className="font-display-thaana cursor-pointer text-right text-xl sm:text-2xl font-bold text-[#142126] transition hover:text-[#0D6E6E] dark:text-[#F1F5F9] dark:hover:text-[#2DD4BF]"
                     >
                       {entry.headword}
                     </button>
                     {settings.showRomanization && entry.romanized && (
                       <span
-                        className="ms-2 font-mono text-xs text-[#52636A] dark:text-[#9BB0B8]"
+                        className="font-mono text-xs text-[#52636A] dark:text-[#9BB0B8]"
                         dir="ltr"
                       >
                         /{entry.romanized}/
@@ -402,7 +415,7 @@ export function DictionaryView({
                     )}
                   </div>
 
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2" dir="ltr">
                     {entry.familyIds.length > 0 && (
                       <button
                         type="button"
@@ -426,7 +439,7 @@ export function DictionaryView({
                   </div>
                 </div>
 
-                <div className="mt-2">
+                <div dir="rtl" className="mt-2">
                   <MetadataBadges entry={entry} lang={lang} compact />
                 </div>
 
@@ -448,23 +461,29 @@ export function DictionaryView({
                 </ol>
 
                 {entry.senses.length > 3 && (
-                  <button
-                    type="button"
-                    onClick={() => onInspectId(entry.id)}
-                    className="mt-2 cursor-pointer text-xs font-semibold text-[#0D6E6E] hover:underline dark:text-[#2DD4BF]"
-                  >
-                    {t(
-                      `އިތުރު ${entry.senses.length - 3} މާނަ ދައްކާ...`,
-                      entry.senses.length - 3 === 1
-                        ? 'Show 1 more sense...'
-                        : `Show ${entry.senses.length - 3} more senses...`,
-                      lang
-                    )}
-                  </button>
+                  <div dir="rtl" className="mt-2">
+                    <button
+                      type="button"
+                      dir={textDir}
+                      onClick={() => onInspectId(entry.id)}
+                      className="cursor-pointer text-xs font-semibold text-[#0D6E6E] hover:underline dark:text-[#2DD4BF]"
+                    >
+                      {t(
+                        `އިތުރު ${entry.senses.length - 3} މާނަ ދައްކާ...`,
+                        entry.senses.length - 3 === 1
+                          ? 'Show 1 more sense...'
+                          : `Show ${entry.senses.length - 3} more senses...`,
+                        lang
+                      )}
+                    </button>
+                  </div>
                 )}
 
                 {matchMeta?.matchType === 'definition' && matchMeta.snippet && (
-                  <p className="mt-2 rounded-lg bg-[#F2ECE1]/60 px-2.5 py-1 text-xs text-[#52636A] dark:bg-[#182C33] dark:text-[#9BB0B8]">
+                  <p
+                    dir={textDir}
+                    className="mt-2 rounded-lg bg-[#F2ECE1]/60 px-2.5 py-1 text-xs text-[#52636A] dark:bg-[#182C33] dark:text-[#9BB0B8]"
+                  >
                     {t('މާނައިން ފެނުނު:', 'Matched in sense:', lang)}{' '}
                     <span dir="rtl" className="inline-block">
                       {matchMeta.snippet}
