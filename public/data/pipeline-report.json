@@ -1,0 +1,40 @@
+{
+  "generatedAt": "2026-11-12T18:59:17.973Z",
+  "rawEntryCount": 38778,
+  "canonicalEntryCount": 38719,
+  "mergedDuplicateGroups": 59,
+  "totalSenses": 56583,
+  "droppedEmptySenses": 1,
+  "repairedLeadingParenSenses": 18,
+  "repairedWordclassParens": 118,
+  "normalizedWordclassTypos": 22,
+  "unclassifiedWordclasses": 7565,
+  "inferredWordclasses": {
+    "phrase_proverb": 1268,
+    "verbal_masdhar": 1815,
+    "abstract_kan": 121
+  },
+  "dialectCounts": {
+    "addu": 189,
+    "fuvahmulah": 72,
+    "archaic": 72,
+    "huvadhoo": 95,
+    "laamu": 17,
+    "haa": 1,
+    "lhaviyani": 2
+  },
+  "registerCounts": {
+    "honorific": 83,
+    "proverb": 398,
+    "figurative": 295
+  },
+  "synonymLinkCount": 12665,
+  "explicitBaseLinkCount": 754,
+  "entriesWithFamily": 20821,
+  "totalCrossLinks": 108999,
+  "entriesWithCrossLinks": 10574,
+  "curatedDailyCount": 28300,
+  "wordle4AnswerCount": 6117,
+  "wordle4ValidCount": 8547,
+  "clueChallengeCount": 1469
+}

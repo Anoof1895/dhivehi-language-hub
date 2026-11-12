@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="dv" dir="rtl">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#0D6E6E" />
+    <title>ދިވެހި ބަހުގެ މަރުކަޒު — Dhivehi Language Hub</title>
+    <link rel="icon" type="image/svg+xml" href="/icon.svg" />
+    <script>
+      (function () {
+        try {
+          var saved = localStorage.getItem('dhivehi_hub_theme');
+          if (saved === 'dark') {
+            document.documentElement.classList.add('dark');
+          }
+          var savedLang = localStorage.getItem('dhivehi_hub_lang');
+          if (savedLang === 'en') {
+            document.documentElement.dir = 'ltr';
+            document.documentElement.lang = 'en';
+          } else {
+            document.documentElement.dir = 'rtl';
+            document.documentElement.lang = 'dv';
+          }
+        } catch (e) {}
+      })();
+    </script>
+  </head>
+  <body class="bg-[#FAF7F2] text-[#142126] antialiased dark:bg-[#0B161A] dark:text-[#F1F5F9]">
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

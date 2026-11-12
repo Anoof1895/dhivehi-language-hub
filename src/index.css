@@ -1,0 +1,99 @@
+@import "tailwindcss";
+
+@font-face {
+  font-family: "Faruma";
+  src: url("/fonts/Faruma.ttf") format("truetype");
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+  unicode-range: U+0780-07BF, U+060C, U+061B, U+061F, U+25CC, U+FDF2;
+}
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+@theme {
+  --font-sans: "Faruma", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+}
+
+:root {
+  --font-thaana: "Faruma", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --font-display: "Faruma", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --bg-canvas: #FAF7F2;
+  --bg-surface: #FFFFFF;
+  --bg-sand: #F2ECE1;
+  --border-subtle: #E4DCCE;
+  --ink-primary: #142126;
+  --ink-muted: #52636A;
+  --accent-lagoon: #0D6E6E;
+  --accent-coral: #D95D39;
+}
+
+.dark {
+  --bg-canvas: #0B161A;
+  --bg-surface: #132329;
+  --bg-sand: #182C33;
+  --border-subtle: #213840;
+  --ink-primary: #F1F5F9;
+  --ink-muted: #9BB0B8;
+  --accent-lagoon: #2DD4BF;
+  --accent-coral: #FB923C;
+}
+
+html {
+  font-family: var(--font-thaana);
+  line-height: 1.95;
+  background-color: var(--bg-canvas);
+  color: var(--ink-primary);
+}
+
+html[dir="ltr"] {
+  direction: ltr;
+  line-height: 1.65;
+}
+
+html[dir="rtl"] {
+  direction: rtl;
+  line-height: 1.95;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  font-family: var(--font-thaana);
+  background-color: var(--bg-canvas);
+  color: var(--ink-primary);
+  overflow-x: hidden;
+}
+
+@layer base {
+  input,
+  textarea,
+  select,
+  button {
+    font-family: inherit;
+  }
+
+  /* Ensure Thaana input text never clips upper/lower fili marks */
+  input,
+  textarea,
+  select {
+    line-height: 1.95;
+  }
+}
+
+.font-display-thaana {
+  font-family: var(--font-display);
+  line-height: 1.85;
+}
+
+.thaana-reading {
+  font-family: var(--font-thaana);
+  line-height: 2.05;
+  padding-block: 0.15rem;
+}
+
+.thaana-pill {
+  font-family: var(--font-thaana);
+  line-height: 1.85;
+  padding-block: 0.2rem;
+}
