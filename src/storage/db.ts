@@ -56,8 +56,9 @@ export const DEFAULT_SETTINGS: UserSettings = {
   dailyTarget: 3,
   activeDecks: ['curated'],
   theme: 'light',
-  uiLanguage: 'dv',
+  uiLanguage: 'en',
   showRomanization: true,
+  showEnglish: true,
   phoneticImeEnabled: false,
 };
 
@@ -125,13 +126,13 @@ export async function setMetaValue(key: string, value: unknown): Promise<void> {
 
 export async function getSettings(): Promise<UserSettings> {
   const saved = await getMetaValue<Partial<UserSettings>>('settings');
+  const rawLang = (saved as { uiLanguage?: string } | null)?.uiLanguage;
   const merged = { ...DEFAULT_SETTINGS, ...(saved ?? {}) };
-  if (
-    merged.uiLanguage !== 'en' &&
-    merged.uiLanguage !== 'dv' &&
-    merged.uiLanguage !== 'dv-en'
-  ) {
+  if (merged.uiLanguage !== 'en' && merged.uiLanguage !== 'dv') {
     merged.uiLanguage = DEFAULT_SETTINGS.uiLanguage;
+  }
+  if (rawLang === 'dv-en') {
+    await saveSettings(merged);
   }
   return merged;
 }
@@ -253,7 +254,13 @@ export async function importAllProgress(raw: unknown): Promise<void> {
     }
   }
   if (data.settings) {
-    await tx.objectStore('meta').put({ key: 'settings', value: data.settings });
+    const importedSettings: UserSettings = {
+      ...DEFAULT_SETTINGS,
+      ...data.settings,
+      uiLanguage:
+        data.settings.uiLanguage === 'dv' ? 'dv' : DEFAULT_SETTINGS.uiLanguage,
+    };
+    await tx.objectStore('meta').put({ key: 'settings', value: importedSettings });
   }
   if (data.dailyProgress) {
     await tx.objectStore('meta').put({ key: 'daily_progress', value: data.dailyProgress });
@@ -266,7 +273,10 @@ export async function importAllProgress(raw: unknown): Promise<void> {
         localStorage.setItem('dhivehi_hub_theme', data.settings.theme);
       }
       if (data.settings.uiLanguage) {
-        localStorage.setItem('dhivehi_hub_lang', data.settings.uiLanguage);
+        localStorage.setItem(
+          'dhivehi_hub_lang',
+          data.settings.uiLanguage === 'dv' ? 'dv' : 'en'
+        );
       }
     } catch {
       // Ignore

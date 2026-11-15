@@ -9,8 +9,11 @@ dist-ssr/
 .env
 .env.local
 .env.*.local
+.env.*
+!.env.example
 *.local
 npm-debug.log*
+data/*.tmp
 
 # Editor & OS files
 .vscode/

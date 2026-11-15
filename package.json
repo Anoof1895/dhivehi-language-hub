@@ -6,6 +6,9 @@
   "scripts": {
     "build:data": "node scripts/build-dictionary.mjs",
     "verify:data": "node scripts/verify-pipeline.mjs",
+    "translate:draft": "node scripts/translate-en.mjs --mode draft",
+    "translate:polish": "node scripts/translate-en.mjs --mode polish",
+    "translate:benchmark": "node scripts/translate-en.mjs --benchmark 25",
     "dev": "vite",
     "build": "tsc --noEmit && vite build",
     "preview": "vite preview",
@@ -21,6 +24,7 @@
     "ts-fsrs": "^6.0.0"
   },
   "devDependencies": {
+    "@google/genai": "^3.3.0",
     "@tailwindcss/vite": "^4.3.5",
     "@types/node": "^24.0.0",
     "@types/react": "^19.1.0",

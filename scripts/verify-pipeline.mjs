@@ -2,7 +2,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import zlib from 'node:zlib';
 import assert from 'node:assert/strict';
-import { segmentGraphemes } from '../src/lib/thaanaCore.js';
+import { segmentGraphemes, THAANA_BASE_CONSONANTS } from '../src/lib/thaanaCore.js';
 
 const DATA_DIR = path.join(process.cwd(), 'public', 'data');
 
@@ -78,6 +78,47 @@ for (const id of pools.wordle4ValidIds) {
   const e = core[id];
   assert.ok(e, `Invalid wordle4 ID ${id}`);
   assert.equal(segmentGraphemes(e.h).length, 4, `Non-4-grapheme wordle4 entry: ${e.h}`);
+}
+
+// 5. English translations, Thaana letter auto-labels, and synonym propagation
+let actualEnCount = 0;
+for (const e of core) {
+  if (e.eg !== undefined) {
+    assert.equal(typeof e.eg, 'string', `eg must be string on ${e.h}`);
+    assert.ok(e.eg.trim().length > 0, `Empty eg on ${e.h}`);
+  }
+  if (e.em !== undefined) {
+    assert.equal(typeof e.em, 'string', `em must be string on ${e.h}`);
+    assert.ok(e.em.trim().length > 0, `Empty em on ${e.h}`);
+  }
+  if (e.eg || e.em) actualEnCount++;
+}
+
+for (const ch of THAANA_BASE_CONSONANTS) {
+  const entry = byHw.get(ch);
+  if (!entry) continue;
+  assert.ok(entry.eg && entry.em, `Single Thaana letter ${ch} must have English gloss and meaning`);
+  assert.ok(
+    entry.em.includes('Thaana letter'),
+    `Single Thaana letter ${ch} em must mention "Thaana letter": ${entry.em}`
+  );
+}
+
+if (typeof report.englishTranslatedCount === 'number') {
+  assert.equal(
+    actualEnCount,
+    report.englishTranslatedCount,
+    'englishTranslatedCount in pipeline-report.json must match dictionary-core.json'
+  );
+}
+
+// Verify synonym propagation: if ލޯބި has English translation, pure synonym stub ހަހަރު must inherit it
+const loabi = byHw.get('ލޯބި');
+if (loabi?.eg || loabi?.em) {
+  assert.ok(
+    haharu.eg && haharu.em,
+    'Pure synonym stub ހަހަރު must inherit English translation from ލޯބި'
+  );
 }
 
 const totalRawBytes = coreRaw.length + linksRaw.length + poolsRaw.length;

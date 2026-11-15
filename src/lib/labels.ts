@@ -65,13 +65,10 @@ export const UI_LANGUAGE_OPTIONS: Array<{
 }> = [
   { key: 'en', label: 'EN', shortLabel: 'EN', settingsLabel: 'English (EN)' },
   { key: 'dv', label: 'ދިވެހި', shortLabel: 'ދިވެހި', settingsLabel: 'ދިވެހި' },
-  { key: 'dv-en', label: 'ދިވެހި · EN', shortLabel: 'ދި·EN', settingsLabel: 'ދިވެހި · EN' },
 ];
 
 export function nextUiLanguage(lang: UiLanguage): UiLanguage {
-  if (lang === 'dv') return 'en';
-  if (lang === 'en') return 'dv-en';
-  return 'dv';
+  return lang === 'en' ? 'dv' : 'en';
 }
 
 export function getUiDirection(lang: UiLanguage): 'ltr' | 'rtl' {
@@ -87,13 +84,9 @@ export function formatCount(
 }
 
 export function formatBiLabel(label: BiLabel, lang: UiLanguage): string {
-  if (lang === 'en') return label.en;
-  if (lang === 'dv-en') return `${label.dv} · \u2066${label.en}\u2069`;
-  return label.dv;
+  return lang === 'en' ? label.en : label.dv;
 }
 
 export function t(dv: string, en: string, lang: UiLanguage): string {
-  if (lang === 'en') return en;
-  if (lang === 'dv-en') return `${dv} · \u2066${en}\u2069`;
-  return dv;
+  return lang === 'en' ? en : dv;
 }

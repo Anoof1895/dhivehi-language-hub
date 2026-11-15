@@ -12,6 +12,8 @@ export interface CompactEntry {
   r: string;
   g: number;
   s: string[];
+  eg?: string;
+  em?: string;
   wc?: string[];
   iw?: InferredWordclass;
   d?: DialectTag[];
@@ -36,6 +38,8 @@ export function hydrateEntry(c: CompactEntry): DictionaryEntry {
     rawWordclasses: c.wc ?? [],
     inferredWordclass: c.iw ?? null,
     senses: c.s,
+    enGloss: c.eg,
+    enMeaning: c.em,
     dialects: c.d ?? [],
     registers: c.rg ?? [],
     synonymIds: c.sy ?? [],

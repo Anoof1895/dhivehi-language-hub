@@ -21,6 +21,8 @@ import {
   getUiDirection,
   t,
 } from '../lib/labels.ts';
+import { Languages } from 'lucide-react';
+import { EnglishSummary } from '../components/EnglishSummary.tsx';
 import { MetadataBadges } from '../components/MetadataBadges.tsx';
 import { SenseText } from '../components/SenseText.tsx';
 
@@ -36,6 +38,7 @@ interface Props {
   onSwapKnown: (entryId: number) => void;
   onCompleteDailyWord: (entryId: number) => void;
   onRefreshUncompleted: () => void;
+  onToggleEnglish: (enabled: boolean) => void;
   onInspectId: (id: number) => void;
   onInspectHeadword: (hw: string) => void;
 }
@@ -54,6 +57,7 @@ export function DailyWordsView({
   onSwapKnown,
   onCompleteDailyWord,
   onRefreshUncompleted,
+  onToggleEnglish,
   onInspectId,
   onInspectHeadword,
 }: Props) {
@@ -104,11 +108,7 @@ export function DailyWordsView({
                   {t('ސްޓްރީކް', 'Streak', lang)}
                 </div>
                 <div dir={textDir} className="text-sm font-bold text-[#142126] dark:text-[#F1F5F9]">
-                  {lang === 'en'
-                    ? formatCount(streak, 'day')
-                    : lang === 'dv-en'
-                    ? `${streak} ދުވަސް · \u2066${formatCount(streak, 'day')}\u2069`
-                    : `${streak} ދުވަސް`}
+                  {lang === 'en' ? formatCount(streak, 'day') : `${streak} ދުވަސް`}
                 </div>
               </div>
             </div>
@@ -138,13 +138,6 @@ export function DailyWordsView({
             <span>
               {lang === 'en' ? (
                 <span dir="ltr">{`Today's Progress: ${completedCount} / ${totalCount}`}</span>
-              ) : lang === 'dv-en' ? (
-                <>
-                  މިއަދުގެ ކުރިއެރުން ·{' '}
-                  <span dir="ltr" className="inline-block">
-                    {`Today's Progress: ${completedCount} / ${totalCount}`}
-                  </span>
-                </>
               ) : (
                 <>
                   މިއަދުގެ ކުރިއެރުން:{' '}
@@ -189,6 +182,18 @@ export function DailyWordsView({
             })}
           </div>
 
+          <button
+            type="button"
+            onClick={() => onToggleEnglish(!settings.showEnglish)}
+            className={`inline-flex cursor-pointer items-center gap-1 rounded-xl border px-2.5 py-1 text-xs font-medium transition ${
+              settings.showEnglish
+                ? 'border-[#0D6E6E]/40 bg-[#0D6E6E]/10 text-[#0D6E6E] dark:border-[#2DD4BF]/40 dark:bg-[#2DD4BF]/15 dark:text-[#2DD4BF]'
+                : 'border-[#E4DCCE] bg-[#FAF7F2] text-[#52636A] hover:border-[#0D6E6E] dark:border-[#213840] dark:bg-[#182C33] dark:text-[#9BB0B8]'
+            }`}
+          >
+            <Languages className="h-3.5 w-3.5" />
+            <span>{settings.showEnglish ? 'EN: ON' : 'EN: OFF'}</span>
+          </button>
           <button
             type="button"
             onClick={onRefreshUncompleted}
@@ -300,6 +305,8 @@ export function DailyWordsView({
                   <MetadataBadges entry={entry} lang={lang} />
                 </div>
 
+                <EnglishSummary entry={entry} showEnglish={settings.showEnglish} />
+
                 {/* Hyperlinked Senses */}
                 <ol dir="rtl" className="mt-4 space-y-2 border-t border-[#E4DCCE]/60 pt-4 dark:border-[#213840]">
                   {entry.senses.map((sense, sIdx) => (
@@ -365,6 +372,14 @@ export function DailyWordsView({
                             <div className="mt-0.5 line-clamp-1 text-xs text-[#52636A] dark:text-[#9BB0B8]">
                               {fam.senses[0]}
                             </div>
+                            {settings.showEnglish && fam.enGloss && (
+                              <div
+                                dir="ltr"
+                                className="mt-0.5 line-clamp-1 text-left text-[11px] font-medium text-[#0D6E6E] dark:text-[#2DD4BF]"
+                              >
+                                {fam.enGloss}
+                              </div>
+                            )}
                           </button>
                         ))}
                       </div>

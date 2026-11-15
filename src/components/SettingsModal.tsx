@@ -125,11 +125,7 @@ export function SettingsModal({
                       : 'border-[#E4DCCE] bg-white text-[#142126] hover:bg-[#F2ECE1] dark:border-[#213840] dark:bg-[#132329] dark:text-[#F1F5F9]'
                   }`}
                 >
-                  {lang === 'en'
-                    ? formatCount(num, 'word')
-                    : lang === 'dv-en'
-                    ? `${num} ބަސް (\u2066${formatCount(num, 'word')}\u2069)`
-                    : `${num} ބަސް`}
+                  {lang === 'en' ? formatCount(num, 'word') : `${num} ބަސް`}
                 </button>
               ))}
             </div>
@@ -197,7 +193,7 @@ export function SettingsModal({
                 </span>
                 <Languages className="h-4 w-4 text-[#0D6E6E] dark:text-[#2DD4BF]" />
               </div>
-              <div className="grid grid-cols-3 gap-2" dir="ltr">
+              <div className="grid grid-cols-2 gap-2" dir="ltr">
                 {UI_LANGUAGE_OPTIONS.map((opt) => {
                   const active = settings.uiLanguage === opt.key;
                   return (
@@ -227,13 +223,27 @@ export function SettingsModal({
 
           <label className="flex cursor-pointer items-center justify-between rounded-2xl border border-[#E4DCCE] bg-white p-3.5 dark:border-[#213840] dark:bg-[#132329]">
             <span className="text-sm font-medium text-[#142126] dark:text-[#F1F5F9]">
-              {t('ލެޓިން ކިޔާގޮތް ދައްކާ (Romanization)', 'Show Romanized Pronunciation Hints', lang)}
+              {t('ލެޓިން ކިޔާގޮތް ދައްކާ', 'Show Romanized Pronunciation Hints', lang)}
             </span>
             <input
               type="checkbox"
               checked={settings.showRomanization}
               onChange={(e) =>
                 onUpdateSettings({ ...settings, showRomanization: e.target.checked })
+              }
+              className="h-4 w-4 accent-[#0D6E6E]"
+            />
+          </label>
+
+          <label className="flex cursor-pointer items-center justify-between rounded-2xl border border-[#E4DCCE] bg-white p-3.5 dark:border-[#213840] dark:bg-[#132329]">
+            <span className="text-sm font-medium text-[#142126] dark:text-[#F1F5F9]">
+              {t('އިނގިރޭސި މާނަ ދައްކާ', 'Show English word translations', lang)}
+            </span>
+            <input
+              type="checkbox"
+              checked={settings.showEnglish}
+              onChange={(e) =>
+                onUpdateSettings({ ...settings, showEnglish: e.target.checked })
               }
               className="h-4 w-4 accent-[#0D6E6E]"
             />
@@ -311,6 +321,17 @@ export function SettingsModal({
                 <span dir="ltr" className="font-mono font-semibold text-[#142126] dark:text-[#F1F5F9]">
                   {report.wordle4ValidCount.toLocaleString()}
                 </span>
+                {typeof report.englishTranslatedCount === 'number' && (
+                  <>
+                    <span>{t('އިނގިރޭސި މާނަ:', 'English coverage:', lang)}</span>
+                    <span dir="ltr" className="font-mono font-semibold text-[#142126] dark:text-[#F1F5F9]">
+                      {report.englishTranslatedCount.toLocaleString()}
+                      {typeof report.englishCoveragePct === 'number'
+                        ? ` (${report.englishCoveragePct}%)`
+                        : ''}
+                    </span>
+                  </>
+                )}
               </div>
             </div>
           )}

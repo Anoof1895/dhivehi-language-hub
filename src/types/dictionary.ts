@@ -25,6 +25,8 @@ export interface DictionaryEntry {
   rawWordclasses: string[];
   inferredWordclass: InferredWordclass;
   senses: string[];
+  enGloss?: string;
+  enMeaning?: string;
   dialects: DialectTag[];
   registers: RegisterTag[];
   synonymIds: number[];
@@ -72,6 +74,9 @@ export interface PipelineReport {
   wordle4AnswerCount: number;
   wordle4ValidCount: number;
   clueChallengeCount: number;
+  englishTranslatedCount?: number;
+  englishCoveragePct?: number;
+  englishSources?: Record<string, number>;
 }
 
 export interface SearchFilters {
@@ -87,11 +92,11 @@ export interface SearchFilters {
 export interface SearchResultItem {
   id: number;
   score: number;
-  matchType: 'exact' | 'prefix' | 'romanized' | 'contains' | 'definition' | 'reverse';
+  matchType: 'exact' | 'prefix' | 'romanized' | 'english' | 'contains' | 'definition' | 'reverse';
   snippet?: string;
 }
 
-export type UiLanguage = 'en' | 'dv' | 'dv-en';
+export type UiLanguage = 'en' | 'dv';
 export type ThemeMode = 'light' | 'dark';
 export type DailyTarget = 1 | 3 | 5;
 export type DeckKey = 'curated' | 'honorific' | 'dialect' | 'figurative' | 'proverb';
@@ -102,5 +107,6 @@ export interface UserSettings {
   theme: ThemeMode;
   uiLanguage: UiLanguage;
   showRomanization: boolean;
+  showEnglish: boolean;
   phoneticImeEnabled: boolean;
 }

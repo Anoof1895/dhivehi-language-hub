@@ -7,6 +7,7 @@ import {
   Link2,
   GitBranch,
   Sparkles,
+  Languages,
 } from 'lucide-react';
 import type {
   DialectTag,
@@ -27,6 +28,7 @@ import {
   t,
 } from '../lib/labels.ts';
 import { latinToThaanaPhonetic } from '../lib/thaana.ts';
+import { EnglishSummary } from '../components/EnglishSummary.tsx';
 import { MetadataBadges } from '../components/MetadataBadges.tsx';
 import { SenseText } from '../components/SenseText.tsx';
 import { VirtualThaanaKeyboard } from '../components/VirtualThaanaKeyboard.tsx';
@@ -36,6 +38,7 @@ interface Props {
   headwordSet: Set<string>;
   searchFn: (filters: SearchFilters, offset?: number, limit?: number) => Promise<SearchResponse>;
   onToggleIme: (enabled: boolean) => void;
+  onToggleEnglish: (enabled: boolean) => void;
   onInspectId: (id: number) => void;
   onInspectHeadword: (hw: string) => void;
 }
@@ -57,6 +60,7 @@ export function DictionaryView({
   headwordSet,
   searchFn,
   onToggleIme,
+  onToggleEnglish,
   onInspectId,
   onInspectHeadword,
 }: Props) {
@@ -162,36 +166,38 @@ export function DictionaryView({
               value={rawInput}
               onChange={(e) => handleInputChange(e.target.value)}
               placeholder={t(
-                '\u2067ތާނަ ނުވަތަ ލެޓިންއިން ބަސް ހޯދާ (މިސާލު: ލޯބި / \u2066loabi\u2069 / \u2066fathihondheli\u2069)...\u2069',
-                'Search in Thaana or Latin (e.g. \u2067ލޯބި\u2069, loabi, haharu)...',
+                '\u2067ތާނަ، ލެޓިން ނުވަތަ އިނގިރޭސިން ހޯދާ (މިސާލު: ލޯބި / \u2066loabi\u2069 / \u2066love\u2069)...\u2069',
+                'Search in Thaana, Latin, or English (e.g. \u2067ލޯބި\u2069, loabi, love)...',
                 lang
               )}
-              className={`flex-1 min-w-0 bg-transparent py-1.5 text-base text-[#142126] placeholder:text-[#52636A]/70 focus:outline-none dark:text-[#F1F5F9] ${
+              className={`min-w-0 flex-1 bg-transparent px-1 py-1.5 text-base text-[#142126] placeholder:text-[#52636A]/70 focus:outline-none dark:text-[#F1F5F9] ${
                 searchInputDir === 'rtl' ? 'text-right' : 'text-left'
               }`}
             />
-            {rawInput && (
+            <div className="flex shrink-0 items-center gap-1">
+              {rawInput && (
+                <button
+                  type="button"
+                  onClick={() => setRawInput('')}
+                  aria-label="Clear search"
+                  className="cursor-pointer rounded-xl p-1.5 text-[#52636A] hover:bg-[#E4DCCE]/50 dark:text-[#9BB0B8]"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              )}
               <button
                 type="button"
-                onClick={() => setRawInput('')}
-                aria-label="Clear search"
-                className="shrink-0 cursor-pointer rounded-xl p-1.5 text-[#52636A] hover:bg-[#E4DCCE]/50 dark:text-[#9BB0B8]"
+                onClick={() => setShowKeyboard((v) => !v)}
+                aria-label="Toggle Thaana keyboard"
+                className={`cursor-pointer rounded-xl p-2 transition ${
+                  showKeyboard
+                    ? 'bg-[#0D6E6E] text-white dark:bg-[#2DD4BF] dark:text-[#0B161A]'
+                    : 'text-[#52636A] hover:bg-[#F2ECE1] dark:text-[#9BB0B8] dark:hover:bg-[#182C33]'
+                }`}
               >
-                <X className="h-4 w-4" />
+                <Keyboard className="h-4 w-4" />
               </button>
-            )}
-            <button
-              type="button"
-              onClick={() => setShowKeyboard((v) => !v)}
-              aria-label="Toggle Thaana keyboard"
-              className={`shrink-0 cursor-pointer rounded-xl p-2 transition ${
-                showKeyboard
-                  ? 'bg-[#0D6E6E] text-white dark:bg-[#2DD4BF] dark:text-[#0B161A]'
-                  : 'text-[#52636A] hover:bg-[#F2ECE1] dark:text-[#9BB0B8] dark:hover:bg-[#182C33]'
-              }`}
-            >
-              <Keyboard className="h-4 w-4" />
-            </button>
+            </div>
           </div>
 
           {/* Search Controls Bar */}
@@ -226,6 +232,20 @@ export function DictionaryView({
                 </span>
               </button>
 
+              <button
+                type="button"
+                aria-pressed={settings.showEnglish}
+                onClick={() => onToggleEnglish(!settings.showEnglish)}
+                className={`inline-flex cursor-pointer items-center gap-1.5 rounded-xl border px-3 py-1.5 text-xs font-semibold transition ${
+                  settings.showEnglish
+                    ? 'border-[#0D6E6E] bg-[#0D6E6E]/12 text-[#0D6E6E] dark:border-[#2DD4BF] dark:bg-[#2DD4BF]/15 dark:text-[#2DD4BF]'
+                    : 'border-[#E4DCCE] bg-[#FAF7F2] text-[#52636A] dark:border-[#213840] dark:bg-[#182C33] dark:text-[#9BB0B8]'
+                }`}
+              >
+                <Languages className="h-3.5 w-3.5" />
+                <span dir={textDir}>{t('އިނގިރޭސި މާނަ', 'English Gloss', lang)}</span>
+              </button>
+
               <label className="inline-flex cursor-pointer items-center gap-1.5 rounded-xl border border-[#E4DCCE] bg-[#FAF7F2] px-3 py-1.5 text-xs font-medium text-[#52636A] dark:border-[#213840] dark:bg-[#182C33] dark:text-[#9BB0B8]">
                 <input
                   type="checkbox"
@@ -244,8 +264,6 @@ export function DictionaryView({
                 ? t('ހޯދަނީ...', 'Searching...', lang)
                 : lang === 'en'
                 ? formatCount(total, 'result')
-                : lang === 'dv-en'
-                ? `${total.toLocaleString()} ނަތީޖާ · \u2066${formatCount(total, 'result')}\u2069`
                 : `${total.toLocaleString()} ނަތީޖާ`}
             </div>
           </div>
@@ -443,6 +461,8 @@ export function DictionaryView({
                   <MetadataBadges entry={entry} lang={lang} compact />
                 </div>
 
+                <EnglishSummary entry={entry} showEnglish={settings.showEnglish} compact />
+
                 <ol dir="rtl" className="mt-3 space-y-1.5">
                   {entry.senses.slice(0, 3).map((sense, sIdx) => (
                     <li
@@ -488,6 +508,15 @@ export function DictionaryView({
                     <span dir="rtl" className="inline-block">
                       {matchMeta.snippet}
                     </span>
+                  </p>
+                )}
+
+                {matchMeta?.matchType === 'english' && matchMeta.snippet && !settings.showEnglish && (
+                  <p
+                    dir="ltr"
+                    className="mt-2 rounded-lg bg-[#F2ECE1]/60 px-2.5 py-1 text-xs text-[#52636A] dark:bg-[#182C33] dark:text-[#9BB0B8]"
+                  >
+                    {t('އިނގިރޭސި މާނައިން ފެނުނު:', 'Matched in English:', lang)} {matchMeta.snippet}
                   </p>
                 )}
               </article>

@@ -18,21 +18,19 @@ describe('UI language modes, directionality, and pluralization', () => {
     expect(t('މިއަދުގެ ކުރިއެރުން', "Today's Progress", 'en')).toBe("Today's Progress");
   });
 
-  it('returns Dhivehi-only in dv mode and bilingual in dv-en mode', () => {
+  it('returns Dhivehi-only in dv mode and clean English in en mode', () => {
     expect(formatBiLabel(WORDCLASS_LABELS['ނ'], 'dv')).toBe('ނަން');
-    expect(formatBiLabel(WORDCLASS_LABELS['ނ'], 'dv-en')).toBe('ނަން · \u2066Noun\u2069');
+    expect(formatBiLabel(WORDCLASS_LABELS['ނ'], 'en')).toBe('Noun');
   });
 
-  it('uses ltr direction for en mode and rtl for dv and dv-en', () => {
+  it('uses ltr direction for en mode and rtl for dv', () => {
     expect(getUiDirection('en')).toBe('ltr');
     expect(getUiDirection('dv')).toBe('rtl');
-    expect(getUiDirection('dv-en')).toBe('rtl');
   });
 
-  it('cycles through all three UI language modes', () => {
+  it('toggles cleanly between en and dv UI language modes', () => {
     expect(nextUiLanguage('dv')).toBe('en');
-    expect(nextUiLanguage('en')).toBe('dv-en');
-    expect(nextUiLanguage('dv-en')).toBe('dv');
+    expect(nextUiLanguage('en')).toBe('dv');
   });
 
   it('pluralizes counts properly (1 day vs 0/2 days)', () => {
@@ -43,13 +41,12 @@ describe('UI language modes, directionality, and pluralization', () => {
     expect(formatCount(3, 'result')).toBe('3 results');
   });
 
-  it('formats FSRS intervals in en, dv, and dv-en modes', () => {
+  it('formats FSRS intervals in en and dv modes', () => {
     const now = new Date('2026-11-13T00:00:00.000Z');
     const oneDay = new Date('2026-11-14T00:00:00.000Z');
     const fourDays = new Date('2026-11-17T00:00:00.000Z');
     expect(formatInterval(now, oneDay, 'en')).toBe('1 day');
     expect(formatInterval(now, fourDays, 'en')).toBe('4 days');
     expect(formatInterval(now, oneDay, 'dv')).toBe('1 ދުވަސް');
-    expect(formatInterval(now, oneDay, 'dv-en')).toBe('1 ދުވަސް \u2066(1d)\u2069');
   });
 });

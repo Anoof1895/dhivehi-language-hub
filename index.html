@@ -1,10 +1,10 @@
 <!doctype html>
-<html lang="dv" dir="ltr">
+<html lang="en" dir="ltr">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="theme-color" content="#0D6E6E" />
-    <title>ދިވެހި ބަހުގެ މަރުކަޒު — Dhivehi Language Hub</title>
+    <title>Dhivehi Language Hub</title>
     <link rel="icon" type="image/svg+xml" href="/icon.svg" />
     <script>
       (function () {
@@ -14,8 +14,12 @@
             document.documentElement.classList.add('dark');
           }
           var savedLang = localStorage.getItem('dhivehi_hub_lang');
+          if (savedLang === 'dv-en') {
+            savedLang = 'en';
+            localStorage.setItem('dhivehi_hub_lang', 'en');
+          }
           document.documentElement.dir = 'ltr';
-          document.documentElement.lang = savedLang === 'en' ? 'en' : 'dv';
+          document.documentElement.lang = savedLang === 'dv' ? 'dv' : 'en';
         } catch (e) {}
       })();
     </script>

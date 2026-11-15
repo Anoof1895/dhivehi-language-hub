@@ -7,9 +7,11 @@ import {
   stripThaanaPunctuation,
   THAANA_BASE_CONSONANTS,
 } from '../src/lib/thaanaCore.js';
+import { applyLettersAndSynonymPropagation } from './lib/en-translation-utils.mjs';
 
 const WORKSPACE_ROOT = process.cwd();
 const RAW_JSON_PATH = path.join(WORKSPACE_ROOT, 'radheef.json');
+const EN_TRANSLATIONS_PATH = path.join(WORKSPACE_ROOT, 'data', 'en-translations.json');
 const OUT_DIR = path.join(WORKSPACE_ROOT, 'public', 'data');
 
 const CONSONANT_SET = new Set(THAANA_BASE_CONSONANTS);
@@ -215,6 +217,14 @@ function main() {
     wordle4AnswerCount: 0,
     wordle4ValidCount: 0,
     clueChallengeCount: 0,
+    englishTranslatedCount: 0,
+    englishCoveragePct: 0,
+    englishSources: {
+      autoLetter: 0,
+      polish: 0,
+      draft: 0,
+      synonymPropagated: 0,
+    },
   };
 
   // Phase 1: Clean and group by canonical headword
@@ -533,6 +543,28 @@ function main() {
   stats.wordle4AnswerCount = wordle4AnswerIds.length;
   stats.clueChallengeCount = clueChallengeIds.length;
 
+  // Phase 6: Non-destructively merge English translations + auto-label Thaana letters + propagate synonyms
+  let rawEnTranslations = {};
+  if (fs.existsSync(EN_TRANSLATIONS_PATH)) {
+    console.log('Merging English translations from data/en-translations.json...');
+    rawEnTranslations = JSON.parse(fs.readFileSync(EN_TRANSLATIONS_PATH, 'utf8'));
+  } else {
+    console.log('No data/en-translations.json found; applying auto-labels for Thaana letters only.');
+  }
+
+  const { resolvedByHeadword, stats: enStats } = applyLettersAndSynonymPropagation(
+    entries,
+    rawEnTranslations
+  );
+  stats.englishTranslatedCount = enStats.translatedCount;
+  stats.englishCoveragePct = Number(((enStats.translatedCount / entries.length) * 100).toFixed(2));
+  stats.englishSources = {
+    autoLetter: enStats.autoLetter,
+    polish: enStats.polish,
+    draft: enStats.draft,
+    synonymPropagated: enStats.synonymPropagated,
+  };
+
   // Write compact JSON artifacts (omitting empty/default fields to keep PWA bundle lean)
   const compactEntries = entries.map((e) => {
     const c = {
@@ -543,6 +575,9 @@ function main() {
       g: e.graphemeCount,
       s: e.senses,
     };
+    const tr = resolvedByHeadword.get(e.headword);
+    if (tr?.enGloss) c.eg = tr.enGloss;
+    if (tr?.enMeaning) c.em = tr.enMeaning;
     if (e.wordclasses.length) c.wc = e.wordclasses;
     if (e.inferredWordclass) c.iw = e.inferredWordclass;
     if (e.dialects.length) c.d = e.dialects;

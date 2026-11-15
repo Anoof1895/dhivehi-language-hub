@@ -79,8 +79,6 @@ export function MetadataBadges({ entry, lang, compact = false }: Props) {
         >
           {lang === 'en'
             ? formatCount(entry.referencedInCount, 'ref')
-            : lang === 'dv-en'
-            ? `${entry.referencedInCount.toLocaleString()} މާނައިގައި · \u2066${formatCount(entry.referencedInCount, 'ref')}\u2069`
             : `${entry.referencedInCount.toLocaleString()} މާނައިގައި`}
         </span>
       )}

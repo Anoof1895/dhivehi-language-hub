@@ -126,12 +126,7 @@ export function App() {
     const root = document.documentElement;
     root.dir = 'ltr';
     root.lang = lang === 'en' ? 'en' : 'dv';
-    document.title =
-      lang === 'en'
-        ? 'Dhivehi Language Hub'
-        : lang === 'dv'
-        ? 'ދިވެހި ބަހުގެ މަރުކަޒު'
-        : 'ދިވެހި ބަހުގެ މަރުކަޒު — Dhivehi Language Hub';
+    document.title = lang === 'en' ? 'Dhivehi Language Hub' : 'ދިވެހި ބަހުގެ މަރުކަޒު';
   }, [lang]);
 
   const knownSet = useMemo(() => new Set(knownIds), [knownIds]);
@@ -399,7 +394,7 @@ export function App() {
   ];
 
   const activeLangOption =
-    UI_LANGUAGE_OPTIONS.find((opt) => opt.key === lang) ?? UI_LANGUAGE_OPTIONS[1];
+    UI_LANGUAGE_OPTIONS.find((opt) => opt.key === lang) ?? UI_LANGUAGE_OPTIONS[0];
 
   const textDir = getUiDirection(lang);
 
@@ -411,32 +406,30 @@ export function App() {
       {/* Top Header */}
       <header className="sticky top-0 z-30 border-b border-[#E4DCCE] bg-[#FAF7F2]/90 backdrop-blur-md dark:border-[#213840] dark:bg-[#0B161A]/90">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3 sm:px-6">
-          <div className="flex items-center gap-3">
-            <img src="/icon.svg" alt="" className="h-9 w-9 rounded-xl shadow-xs" />
-            <div className="text-left">
+          <div className="flex min-w-0 items-center gap-3">
+            <img src="/icon.svg" alt="" className="h-9 w-9 shrink-0 rounded-xl shadow-xs" />
+            <div className="min-w-0 text-left">
               <div
                 dir={textDir}
-                className="font-display-thaana text-left text-lg font-bold leading-snug text-[#142126] dark:text-[#F1F5F9]"
+                className="font-display-thaana min-h-7 truncate text-left text-lg font-bold leading-7 text-[#142126] dark:text-[#F1F5F9]"
               >
                 {t('ދިވެހި ބަހުގެ މަރުކަޒު', 'Dhivehi Language Hub', lang)}
               </div>
               <div
                 dir={textDir}
-                className="text-left text-[11px] text-[#52636A] dark:text-[#9BB0B8]"
+                className="min-h-4 text-left text-[11px] leading-4 text-[#52636A] dark:text-[#9BB0B8]"
               >
                 {report
                   ? lang === 'en'
                     ? `${report.canonicalEntryCount.toLocaleString()} words · Radheef`
-                    : lang === 'dv-en'
-                    ? `${report.canonicalEntryCount.toLocaleString()} ބަސް · \u2066Radheef\u2069`
                     : `${report.canonicalEntryCount.toLocaleString()} ލަފުޒު · ރަދީފު`
                   : t('ރަދީފު ލޯޑުވަނީ...', 'Loading Radheef...', lang)}
               </div>
             </div>
           </div>
 
-          <div className="flex items-center gap-1.5 sm:gap-2">
-            {/* 3-mode Segmented Language Switcher (Desktop/Tablet) */}
+          <div className="flex shrink-0 items-center gap-1.5 sm:gap-2">
+            {/* 2-way Segmented Language Switcher (Desktop/Tablet) */}
             <div
               role="group"
               aria-label="UI Language"
@@ -456,7 +449,7 @@ export function App() {
                         uiLanguage: opt.key,
                       })
                     }
-                    className={`cursor-pointer rounded-[10px] px-2.5 py-1.5 text-xs font-semibold transition ${
+                    className={`min-w-[3.5rem] cursor-pointer rounded-[10px] px-2.5 py-1.5 text-center text-xs font-semibold transition ${
                       active
                         ? 'bg-[#0D6E6E] text-white shadow-xs dark:bg-[#2DD4BF] dark:text-[#0B161A]'
                         : 'text-[#52636A] hover:text-[#142126] dark:text-[#9BB0B8] dark:hover:text-[#F1F5F9]'
@@ -468,7 +461,7 @@ export function App() {
               })}
             </div>
 
-            {/* Compact Cycle Language Button (Mobile < sm) */}
+            {/* Compact Toggle Language Button (Mobile < sm) */}
             <button
               type="button"
               onClick={() =>
@@ -478,9 +471,9 @@ export function App() {
                 })
               }
               aria-label="Switch UI language"
-              className="inline-flex cursor-pointer items-center gap-1 rounded-xl border border-[#E4DCCE] bg-white px-2.5 py-2 text-xs font-semibold text-[#142126] transition hover:bg-[#F2ECE1] sm:hidden dark:border-[#213840] dark:bg-[#132329] dark:text-[#F1F5F9]"
+              className="inline-flex min-w-[4.75rem] cursor-pointer items-center justify-center gap-1 rounded-xl border border-[#E4DCCE] bg-white px-2.5 py-2 text-xs font-semibold text-[#142126] transition hover:bg-[#F2ECE1] sm:hidden dark:border-[#213840] dark:bg-[#132329] dark:text-[#F1F5F9]"
             >
-              <Languages className="h-4 w-4 text-[#0D6E6E] dark:text-[#2DD4BF]" />
+              <Languages className="h-4 w-4 shrink-0 text-[#0D6E6E] dark:text-[#2DD4BF]" />
               <span>{activeLangOption.shortLabel}</span>
             </button>
 
@@ -526,7 +519,7 @@ export function App() {
                   key={item.key}
                   type="button"
                   onClick={() => setTab(item.key)}
-                  className={`flex w-full cursor-pointer items-center justify-between rounded-2xl px-3.5 py-2.5 text-sm font-semibold transition ${
+                  className={`flex min-h-[42px] w-full cursor-pointer items-center justify-between rounded-2xl px-3.5 py-2 text-sm font-semibold transition ${
                     active
                       ? 'bg-[#0D6E6E] text-white dark:bg-[#2DD4BF] dark:text-[#0B161A]'
                       : 'text-[#52636A] hover:bg-[#F2ECE1] hover:text-[#142126] dark:text-[#9BB0B8] dark:hover:bg-[#182C33] dark:hover:text-[#F1F5F9]'
@@ -534,7 +527,7 @@ export function App() {
                 >
                   <span className="flex min-w-0 items-center gap-2.5">
                     <Icon className="h-4 w-4 shrink-0" />
-                    <span dir={textDir} className="truncate">{t(item.dv, item.en, lang)}</span>
+                    <span dir={textDir} className="truncate leading-normal">{t(item.dv, item.en, lang)}</span>
                   </span>
                   {item.badge !== undefined && item.badge > 0 && (
                     <span
@@ -588,6 +581,9 @@ export function App() {
                   onSwapKnown={handleSwapKnown}
                   onCompleteDailyWord={handleCompleteDailyWord}
                   onRefreshUncompleted={handleRefreshUncompleted}
+                  onToggleEnglish={(enabled) =>
+                    updateSettings({ ...settings, showEnglish: enabled })
+                  }
                   onInspectId={inspectId}
                   onInspectHeadword={inspectHeadword}
                 />
@@ -600,6 +596,9 @@ export function App() {
                   searchFn={search}
                   onToggleIme={(enabled) =>
                     updateSettings({ ...settings, phoneticImeEnabled: enabled })
+                  }
+                  onToggleEnglish={(enabled) =>
+                    updateSettings({ ...settings, showEnglish: enabled })
                   }
                   onInspectId={inspectId}
                   onInspectHeadword={inspectHeadword}
@@ -687,6 +686,10 @@ export function App() {
         headwordSet={headwordSet}
         lang={lang}
         showRomanization={settings.showRomanization}
+        showEnglish={settings.showEnglish}
+        onToggleEnglish={(enabled) =>
+          updateSettings({ ...settings, showEnglish: enabled })
+        }
         knownIds={knownSet}
         srsIds={srsSet}
         onClose={() => {

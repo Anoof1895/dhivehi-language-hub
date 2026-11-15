@@ -555,6 +555,11 @@ export function GamesView({
               <p dir="rtl" className="mt-1 text-xs text-[#52636A] dark:text-[#9BB0B8]">
                 {wordleTarget.senses[0]}
               </p>
+              {settings.showEnglish && wordleTarget.enGloss && (
+                <p dir="ltr" className="mt-1 text-xs font-medium text-[#0D6E6E] dark:text-[#2DD4BF]">
+                  {wordleTarget.enGloss}
+                </p>
+              )}
 
               <div className="mt-3 flex flex-wrap justify-center gap-2">
                 <button
@@ -652,8 +657,6 @@ export function GamesView({
               <span className="rounded-full bg-[#0D6E6E]/12 px-2.5 py-0.5 text-xs font-semibold text-[#0D6E6E] dark:bg-[#2DD4BF]/15 dark:text-[#2DD4BF]">
                 {lang === 'en'
                   ? formatCount(clueTarget.graphemeCount, 'syllable')
-                  : lang === 'dv-en'
-                  ? `${clueTarget.graphemeCount} އަކުރު (ސިލަބަލް) · \u2066${formatCount(clueTarget.graphemeCount, 'syllable')}\u2069`
                   : `${clueTarget.graphemeCount} އަކުރު (ސިލަބަލް)`}
               </span>
             </div>
@@ -826,6 +829,11 @@ export function GamesView({
                 >
                   {clueTarget.headword}
                 </button>
+                {settings.showEnglish && clueTarget.enGloss && (
+                  <p dir="ltr" className="mt-1 text-xs font-medium text-[#52636A] dark:text-[#9BB0B8]">
+                    {clueTarget.enGloss}
+                  </p>
+                )}
               </div>
               <div className="mt-3 flex flex-wrap justify-center gap-2">
                 <button

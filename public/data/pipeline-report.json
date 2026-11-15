@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-11-12T18:59:17.973Z",
+  "generatedAt": "2026-11-15T02:11:20.209Z",
   "rawEntryCount": 38778,
   "canonicalEntryCount": 38719,
   "mergedDuplicateGroups": 59,
@@ -36,5 +36,13 @@
   "curatedDailyCount": 28300,
   "wordle4AnswerCount": 6117,
   "wordle4ValidCount": 8547,
-  "clueChallengeCount": 1469
+  "clueChallengeCount": 1469,
+  "englishTranslatedCount": 21608,
+  "englishCoveragePct": 55.81,
+  "englishSources": {
+    "autoLetter": 38,
+    "polish": 13800,
+    "draft": 0,
+    "synonymPropagated": 7770
+  }
 }

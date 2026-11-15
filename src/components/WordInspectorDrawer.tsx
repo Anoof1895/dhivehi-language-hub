@@ -6,12 +6,14 @@ import {
   BookMarked,
   CheckCircle2,
   GitBranch,
+  Languages,
   Link2,
   Sparkles,
 } from 'lucide-react';
 import type { EntryDetailPayload } from '../hooks/useDictionary.ts';
 import type { UiLanguage } from '../types/dictionary.ts';
 import { getUiDirection, t } from '../lib/labels.ts';
+import { EnglishSummary } from './EnglishSummary.tsx';
 import { MetadataBadges } from './MetadataBadges.tsx';
 import { SenseText } from './SenseText.tsx';
 
@@ -23,6 +25,7 @@ interface Props {
   headwordSet: Set<string>;
   lang: UiLanguage;
   showRomanization: boolean;
+  showEnglish: boolean;
   knownIds: Set<number>;
   srsIds: Set<number>;
   onClose: () => void;
@@ -31,6 +34,7 @@ interface Props {
   onInspectHeadword: (headword: string) => void;
   onAddToSrs: (id: number) => void;
   onToggleKnown: (id: number) => void;
+  onToggleEnglish: (enabled: boolean) => void;
 }
 
 export function WordInspectorDrawer({
@@ -41,6 +45,7 @@ export function WordInspectorDrawer({
   headwordSet,
   lang,
   showRomanization,
+  showEnglish,
   knownIds,
   srsIds,
   onClose,
@@ -49,6 +54,7 @@ export function WordInspectorDrawer({
   onInspectHeadword,
   onAddToSrs,
   onToggleKnown,
+  onToggleEnglish,
 }: Props) {
   const [trailLabels, setTrailLabels] = useState<Record<number, string>>({});
 
@@ -96,14 +102,28 @@ export function WordInspectorDrawer({
               {t('ބަހުގެ ތަފްޞީލު', 'Word Inspector', lang)}
             </span>
           </div>
-          <button
-            type="button"
-            onClick={onClose}
-            aria-label="Close"
-            className="cursor-pointer rounded-xl p-2 text-[#52636A] hover:bg-[#F2ECE1] dark:text-[#9BB0B8] dark:hover:bg-[#182C33]"
-          >
-            <X className="h-5 w-5" />
-          </button>
+          <div className="flex items-center gap-1.5">
+            <button
+              type="button"
+              onClick={() => onToggleEnglish(!showEnglish)}
+              className={`inline-flex cursor-pointer items-center gap-1 rounded-xl border px-2.5 py-1 text-xs font-medium transition ${
+                showEnglish
+                  ? 'border-[#0D6E6E]/40 bg-[#0D6E6E]/10 text-[#0D6E6E] dark:border-[#2DD4BF]/40 dark:bg-[#2DD4BF]/15 dark:text-[#2DD4BF]'
+                  : 'border-[#E4DCCE] bg-[#FAF7F2] text-[#52636A] hover:border-[#0D6E6E] dark:border-[#213840] dark:bg-[#182C33] dark:text-[#9BB0B8]'
+              }`}
+            >
+              <Languages className="h-3.5 w-3.5" />
+              <span>{showEnglish ? 'EN: ON' : 'EN: OFF'}</span>
+            </button>
+            <button
+              type="button"
+              onClick={onClose}
+              aria-label="Close"
+              className="cursor-pointer rounded-xl p-2 text-[#52636A] hover:bg-[#F2ECE1] dark:text-[#9BB0B8] dark:hover:bg-[#182C33]"
+            >
+              <X className="h-5 w-5" />
+            </button>
+          </div>
         </div>
 
         {/* Breadcrumb trail */}
@@ -205,6 +225,8 @@ export function WordInspectorDrawer({
                   <MetadataBadges entry={entry} lang={lang} />
                 </div>
 
+                <EnglishSummary entry={entry} showEnglish={showEnglish} />
+
                 {/* Hyperlinked Definitions */}
                 <div className="mt-5 space-y-2.5 border-t border-[#E4DCCE]/70 pt-4 dark:border-[#213840]">
                   <p dir={textDir} className="text-xs font-semibold text-[#52636A] dark:text-[#9BB0B8]">
@@ -286,6 +308,14 @@ export function WordInspectorDrawer({
                         <div className="line-clamp-1 text-xs text-[#52636A] dark:text-[#9BB0B8]">
                           {fam.senses[0]}
                         </div>
+                        {showEnglish && fam.enGloss && (
+                          <div
+                            dir="ltr"
+                            className="mt-0.5 line-clamp-1 text-left text-[11px] font-medium text-[#0D6E6E] dark:text-[#2DD4BF]"
+                          >
+                            {fam.enGloss}
+                          </div>
+                        )}
                       </button>
                     ))}
                   </div>
@@ -346,6 +376,14 @@ export function WordInspectorDrawer({
                         <div className="mt-0.5 line-clamp-2 text-xs text-[#52636A] dark:text-[#9BB0B8]">
                           {ref.senses.find((s) => s.includes(entry.headword)) ?? ref.senses[0]}
                         </div>
+                        {showEnglish && ref.enGloss && (
+                          <div
+                            dir="ltr"
+                            className="mt-0.5 line-clamp-1 text-left text-[11px] font-medium text-[#0D6E6E] dark:text-[#2DD4BF]"
+                          >
+                            {ref.enGloss}
+                          </div>
+                        )}
                       </button>
                     ))}
                   </div>

@@ -41,20 +41,16 @@ export function formatInterval(now: Date, due: Date, lang: UiLanguage): string {
   const mins = Math.round(diffMs / 60000);
   if (mins < 60) {
     const val = Math.max(1, mins);
-    if (lang === 'en') return val === 1 ? '1 min' : `${val} mins`;
-    return lang === 'dv-en' ? `${val} މިނިޓު \u2066(${val}m)\u2069` : `${val} މިނިޓު`;
+    return lang === 'en' ? (val === 1 ? '1 min' : `${val} mins`) : `${val} މިނިޓު`;
   }
   const hours = Math.round(diffMs / 3600000);
   if (hours < 24) {
-    if (lang === 'en') return hours === 1 ? '1 hr' : `${hours} hrs`;
-    return lang === 'dv-en' ? `${hours} ގަޑިއިރު \u2066(${hours}h)\u2069` : `${hours} ގަޑިއިރު`;
+    return lang === 'en' ? (hours === 1 ? '1 hr' : `${hours} hrs`) : `${hours} ގަޑިއިރު`;
   }
   const days = Math.round(diffMs / 86400000);
   if (days < 30) {
-    if (lang === 'en') return days === 1 ? '1 day' : `${days} days`;
-    return lang === 'dv-en' ? `${days} ދުވަސް \u2066(${days}d)\u2069` : `${days} ދުވަސް`;
+    return lang === 'en' ? (days === 1 ? '1 day' : `${days} days`) : `${days} ދުވަސް`;
   }
   const months = Math.round(days / 30);
-  if (lang === 'en') return months === 1 ? '1 mo' : `${months} mos`;
-  return lang === 'dv-en' ? `${months} މަސް \u2066(${months}mo)\u2069` : `${months} މަސް`;
+  return lang === 'en' ? (months === 1 ? '1 mo' : `${months} mos`) : `${months} މަސް`;
 }

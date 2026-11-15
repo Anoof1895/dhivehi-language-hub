@@ -12,6 +12,7 @@ import type { ReviewPreviewOption, StoredSrsCard, Grade } from '../lib/fsrs.ts';
 import { previewSrsRatings } from '../lib/fsrs.ts';
 import { formatInterval } from '../lib/date.ts';
 import { t } from '../lib/labels.ts';
+import { EnglishSummary } from '../components/EnglishSummary.tsx';
 import { MetadataBadges } from '../components/MetadataBadges.tsx';
 import { SenseText } from '../components/SenseText.tsx';
 
@@ -234,6 +235,11 @@ export function ReviewView({
                 </div>
               ) : (
                 <div className="space-y-5 border-t border-[#E4DCCE]/70 pt-5 dark:border-[#213840]">
+                  <EnglishSummary
+                    entry={currentEntry}
+                    showEnglish={settings.showEnglish}
+                    compact
+                  />
                   <ol dir="rtl" className="space-y-2.5">
                     {currentEntry.senses.map((sense, idx) => (
                       <li
@@ -268,11 +274,7 @@ export function ReviewView({
                           }`}
                         >
                           <div className="text-sm font-bold">
-                            {lang === 'en'
-                              ? opt.labelEn
-                              : lang === 'dv-en'
-                              ? `${opt.labelDv} · \u2066${opt.labelEn}\u2069`
-                              : opt.labelDv}
+                            {lang === 'en' ? opt.labelEn : opt.labelDv}
                           </div>
                           <div className="mt-0.5 text-[11px] opacity-85">
                             {formatInterval(new Date(), opt.nextDue, lang)}
