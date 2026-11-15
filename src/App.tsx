@@ -613,6 +613,7 @@ export function App() {
                   checkWordleGuess={checkWordleGuess}
                   autocomplete={autocomplete}
                   onInspectId={inspectId}
+                  isOverlayOpen={drawerOpen || settingsOpen}
                 />
               )}
 

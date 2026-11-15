@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
   Gamepad2,
   Share2,
@@ -18,6 +18,15 @@ import {
   type TileStatus,
 } from '../lib/wordle.ts';
 import {
+  EMPTY_WORDLE_INPUT,
+  applyWordleBackspace,
+  applyWordleConsonant,
+  applyWordleFili,
+  processWordleKeyDown,
+  type WordleInputMode,
+  type WordleInputState,
+} from '../lib/wordleKeyboard.ts';
+import {
   buildClueShareText,
   pickClueDistractorIds,
   pickDailyClueId,
@@ -25,12 +34,11 @@ import {
 } from '../lib/clueGame.ts';
 import { getMaleDateKey, getPreviousDateKey } from '../lib/date.ts';
 import {
-  composeSyllable,
   latinToThaanaPhonetic,
   segmentGraphemes,
   splitGrapheme,
 } from '../lib/thaana.ts';
-import { formatCount, t } from '../lib/labels.ts';
+import { formatCount, getUiDirection, t } from '../lib/labels.ts';
 import { VirtualThaanaKeyboard } from '../components/VirtualThaanaKeyboard.tsx';
 import { MetadataBadges } from '../components/MetadataBadges.tsx';
 import {
@@ -51,6 +59,7 @@ interface Props {
     limit?: number
   ) => Promise<Array<{ id: number; headword: string; romanized: string }>>;
   onInspectId: (id: number) => void;
+  isOverlayOpen?: boolean;
 }
 
 function tileClasses(status?: TileStatus, filled?: boolean): string {
@@ -77,6 +86,7 @@ export function GamesView({
   checkWordleGuess,
   autocomplete,
   onInspectId,
+  isOverlayOpen = false,
 }: Props) {
   const lang = settings.uiLanguage;
   const dateKey = getMaleDateKey();
@@ -87,13 +97,45 @@ export function GamesView({
   // ---------------- WORDLE STATE ----------------
   const [wordlePractice, setWordlePractice] = useState(false);
   const [wordleTarget, setWordleTarget] = useState<DictionaryEntry | null>(null);
-  const [wordleTiles, setWordleTiles] = useState<string[]>([]);
-  const [pendingIdx, setPendingIdx] = useState<number | null>(null);
+  const [wordleInput, setWordleInput] = useState<WordleInputState>(EMPTY_WORDLE_INPUT);
+  const wordleInputRef = useRef<WordleInputState>(EMPTY_WORDLE_INPUT);
+  const [inputMode, setInputMode] = useState<WordleInputMode>('qwerty');
+  const [activeVirtualKey, setActiveVirtualKey] = useState<string | null>(null);
+  const flashTimerRef = useRef<number | null>(null);
+  const submittingWordleRef = useRef(false);
   const [wordleGuesses, setWordleGuesses] = useState<string[]>([]);
   const [wordleEvals, setWordleEvals] = useState<TileStatus[][]>([]);
   const [wordleStatus, setWordleStatus] = useState<'playing' | 'won' | 'lost'>('playing');
   const [wordleErr, setWordleErr] = useState<string | null>(null);
   const [wordleStats, setWordleStats] = useState<GameStats>(DEFAULT_GAME_STATS);
+
+  const wordleTiles = wordleInput.tiles;
+  const pendingIdx = wordleInput.pendingIdx;
+
+  const commitWordleInput = (next: WordleInputState) => {
+    wordleInputRef.current = next;
+    setWordleInput(next);
+  };
+
+  const flashVirtualKey = (key: string | null) => {
+    if (!key) return;
+    setActiveVirtualKey(key);
+    if (flashTimerRef.current !== null) {
+      window.clearTimeout(flashTimerRef.current);
+    }
+    flashTimerRef.current = window.setTimeout(() => {
+      setActiveVirtualKey(null);
+      flashTimerRef.current = null;
+    }, 160);
+  };
+
+  useEffect(() => {
+    return () => {
+      if (flashTimerRef.current !== null) {
+        window.clearTimeout(flashTimerRef.current);
+      }
+    };
+  }, []);
 
   // ---------------- CLUE CHALLENGE STATE ----------------
   const [cluePractice, setCluePractice] = useState(false);
@@ -111,8 +153,7 @@ export function GamesView({
 
   const loadWordlePuzzle = async (practice: boolean) => {
     setWordleErr(null);
-    setWordleTiles([]);
-    setPendingIdx(null);
+    commitWordleInput(EMPTY_WORDLE_INPUT);
 
     const savedStats = await getMetaValue<GameStats>('wordle_stats');
     if (savedStats) setWordleStats(savedStats);
@@ -221,45 +262,26 @@ export function GamesView({
   const handleWordleConsonant = (ch: string) => {
     if (wordleStatus !== 'playing') return;
     setWordleErr(null);
-    setWordleTiles((prev) => {
-      if (prev.length >= 4) return prev;
-      const next = [...prev, ch];
-      setPendingIdx(next.length - 1);
-      return next;
-    });
+    commitWordleInput(applyWordleConsonant(wordleInputRef.current, ch));
   };
 
   const handleWordleFili = (fili: string) => {
     if (wordleStatus !== 'playing') return;
     setWordleErr(null);
-    setWordleTiles((prev) => {
-      if (prev.length === 0) return prev;
-      const targetSlot = pendingIdx !== null ? pendingIdx : prev.length - 1;
-      const cur = prev[targetSlot];
-      if (!cur) return prev;
-      const { base } = splitGrapheme(cur);
-      const next = [...prev];
-      next[targetSlot] = composeSyllable(base || cur, fili);
-      setPendingIdx(null);
-      return next;
-    });
+    commitWordleInput(applyWordleFili(wordleInputRef.current, fili));
   };
 
   const handleWordleBackspace = () => {
     if (wordleStatus !== 'playing') return;
     setWordleErr(null);
-    setWordleTiles((prev) => {
-      if (prev.length === 0) return prev;
-      const lastIdx = prev.length - 1;
-      const { base, fili } = splitGrapheme(prev[lastIdx]);
-      if (fili) {
-        const next = [...prev];
-        next[lastIdx] = base;
-        setPendingIdx(lastIdx);
-        return next;
-      }
-      setPendingIdx(null);
-      return prev.slice(0, -1);
+    commitWordleInput(applyWordleBackspace(wordleInputRef.current));
+  };
+
+  const handleInputModeChange = (nextMode: WordleInputMode) => {
+    setInputMode(nextMode);
+    commitWordleInput({
+      ...wordleInputRef.current,
+      phoneticBuffer: wordleInputRef.current.tiles.join(''),
     });
   };
 
@@ -291,48 +313,53 @@ export function GamesView({
   };
 
   const handleWordleSubmit = async () => {
-    if (wordleStatus !== 'playing' || !wordleTarget) return;
-    if (wordleTiles.length !== 4) {
+    if (wordleStatus !== 'playing' || !wordleTarget || submittingWordleRef.current) return;
+    const currentTiles = wordleInputRef.current.tiles;
+    if (currentTiles.length !== 4) {
       setWordleErr(t('4 އަކުރު (ސިލަބަލް) ހަމަކުރޭ', 'Enter all 4 Thaana syllables', lang));
       return;
     }
-    const guessWord = wordleTiles.join('');
-    const check = await checkWordleGuess(guessWord);
-    if (!check.valid) {
-      setWordleErr(
-        t('ރަދީފުގައި މި ލަފުޒެއް ނެތް (ފިލި ޗެކްކޮށްލާ)', 'Word not found in 4-syllable Radheef list', lang)
-      );
-      return;
-    }
-
-    const evalRow = evaluateThaanaWordleGuess(guessWord, wordleTarget.headword);
-    const nextGuesses = [...wordleGuesses, guessWord];
-    const nextEvals = [...wordleEvals, evalRow];
-    const won = evalRow.every((s) => s === 'exact');
-    const lost = !won && nextGuesses.length >= 6;
-    const nextStatus: 'playing' | 'won' | 'lost' = won
-      ? 'won'
-      : lost
-      ? 'lost'
-      : 'playing';
-
-    setWordleGuesses(nextGuesses);
-    setWordleEvals(nextEvals);
-    setWordleTiles([]);
-    setPendingIdx(null);
-    setWordleStatus(nextStatus);
-
-    if (!wordlePractice) {
-      await setMetaValue(`daily_game_wordle_${dateKey}`, {
-        dateKey,
-        targetId: wordleTarget.id,
-        guesses: nextGuesses,
-        evaluations: nextEvals,
-        status: nextStatus,
-      } satisfies WordleGameRecord);
-      if (nextStatus !== 'playing') {
-        await updateStatsRecord('wordle_stats', won, false);
+    submittingWordleRef.current = true;
+    try {
+      const guessWord = currentTiles.join('');
+      const check = await checkWordleGuess(guessWord);
+      if (!check.valid) {
+        setWordleErr(
+          t('ރަދީފުގައި މި ލަފުޒެއް ނެތް (ފިލި ޗެކްކޮށްލާ)', 'Word not found in 4-syllable Radheef list', lang)
+        );
+        return;
       }
+
+      const evalRow = evaluateThaanaWordleGuess(guessWord, wordleTarget.headword);
+      const nextGuesses = [...wordleGuesses, guessWord];
+      const nextEvals = [...wordleEvals, evalRow];
+      const won = evalRow.every((s) => s === 'exact');
+      const lost = !won && nextGuesses.length >= 6;
+      const nextStatus: 'playing' | 'won' | 'lost' = won
+        ? 'won'
+        : lost
+        ? 'lost'
+        : 'playing';
+
+      setWordleGuesses(nextGuesses);
+      setWordleEvals(nextEvals);
+      commitWordleInput(EMPTY_WORDLE_INPUT);
+      setWordleStatus(nextStatus);
+
+      if (!wordlePractice) {
+        await setMetaValue(`daily_game_wordle_${dateKey}`, {
+          dateKey,
+          targetId: wordleTarget.id,
+          guesses: nextGuesses,
+          evaluations: nextEvals,
+          status: nextStatus,
+        } satisfies WordleGameRecord);
+        if (nextStatus !== 'playing') {
+          await updateStatsRecord('wordle_stats', won, false);
+        }
+      }
+    } finally {
+      submittingWordleRef.current = false;
     }
   };
 
@@ -377,6 +404,116 @@ export function GamesView({
       }
     }
   };
+
+  const handleClueNextRound = () => {
+    if (cluePractice) {
+      void loadCluePuzzle(true);
+    } else {
+      setCluePractice(true);
+    }
+  };
+
+  // Physical Keyboard Listener (Basle Wordle + Maana Clue)
+  const keyHandlerRef = useRef<(e: KeyboardEvent) => void>(() => {});
+  keyHandlerRef.current = (e: KeyboardEvent) => {
+    if (isOverlayOpen || document.querySelector('[aria-modal="true"]')) return;
+    if (e.ctrlKey || e.metaKey || e.altKey || e.isComposing) return;
+
+    const isEditableElement = (el: EventTarget | Element | null): boolean => {
+      if (!(el instanceof Element)) return false;
+      if (el instanceof HTMLElement && el.isContentEditable) return true;
+      const tag = el.tagName;
+      return tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT';
+    };
+
+    if (isEditableElement(e.target) || isEditableElement(document.activeElement)) {
+      return;
+    }
+
+    const activeEl =
+      document.activeElement instanceof Element ? document.activeElement : null;
+    const inShellNav = Boolean(activeEl?.closest('header, nav, aside'));
+
+    if (gameTab === 'wordle') {
+      if (wordleStatus !== 'playing') return;
+
+      if (e.key === 'Backspace') {
+        e.preventDefault();
+        handleWordleBackspace();
+        flashVirtualKey('Backspace');
+        return;
+      }
+
+      if (e.key === 'Enter') {
+        if (inShellNav) return;
+        if (
+          activeEl instanceof HTMLButtonElement &&
+          !activeEl.hasAttribute('data-vk-key') &&
+          wordleInputRef.current.tiles.length === 0 &&
+          activeEl.matches?.(':focus-visible')
+        ) {
+          return;
+        }
+        e.preventDefault();
+        flashVirtualKey('Enter');
+        void handleWordleSubmit();
+        return;
+      }
+
+      if (e.key === ' ' && inShellNav) return;
+
+      const result = processWordleKeyDown(
+        wordleInputRef.current,
+        inputMode,
+        e.key
+      );
+      if (result.handled) {
+        e.preventDefault();
+        setWordleErr(null);
+        commitWordleInput(result.next);
+        flashVirtualKey(result.flashKey);
+      }
+      return;
+    }
+
+    if (gameTab === 'clue' && clueTarget) {
+      if (clueStatus === 'playing') {
+        if (showChoices && !e.shiftKey && ['1', '2', '3', '4'].includes(e.key)) {
+          const idx = Number(e.key) - 1;
+          const choice = clueChoices[idx];
+          if (choice && !clueGuesses.some((g) => g.id === choice.id)) {
+            e.preventDefault();
+            void handleClueGuess(choice.id);
+          }
+          return;
+        }
+
+        if (e.key === 'h' || e.key === 'H') {
+          if (revealedClues < clueTarget.senses.length) {
+            e.preventDefault();
+            setRevealedClues((c) => Math.min(clueTarget.senses.length, c + 1));
+          }
+          return;
+        }
+      } else if (e.key === 'Enter' || e.key === ' ') {
+        if (inShellNav) return;
+        if (
+          activeEl instanceof HTMLButtonElement &&
+          activeEl.closest('[data-clue-postgame-actions], [data-clue-headword]')
+        ) {
+          return;
+        }
+        e.preventDefault();
+        handleClueNextRound();
+      }
+    }
+  };
+
+  useEffect(() => {
+    const onKeyDown = (e: KeyboardEvent) => keyHandlerRef.current(e);
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, []);
 
   const handleShare = async (text: string) => {
     try {
@@ -601,6 +738,22 @@ export function GamesView({
             lang={lang}
             keyStates={consonantKeyStates}
             pendingConsonant={pendingConsonant}
+            activeKey={activeVirtualKey}
+            inputMode={inputMode}
+            onInputModeChange={handleInputModeChange}
+            keyboardHint={
+              inputMode === 'qwerty'
+                ? t(
+                    'ތާނަ ނުވަތަ QWERTY ކީބޯޑުން ލިޔެވޭނެ · ޗެކްކުރުމަށް Enter',
+                    'Type using Thaana or QWERTY keyboard · Enter to guess',
+                    lang
+                  )
+                : t(
+                    'ފޮނެޓިކްކޮށް ލިޔެވޭނެ (dh, sh, aa · ސުކުން: Space) · ޗެކްކުރުމަށް Enter',
+                    'Type phonetically (dh, sh, th, aa · Space for sukun) · Enter to guess',
+                    lang
+                  )
+            }
             onChar={handleWordleConsonant}
             onFili={handleWordleFili}
             onBackspace={handleWordleBackspace}
@@ -695,6 +848,12 @@ export function GamesView({
               >
                 <Lightbulb className="h-3.5 w-3.5" />
                 <span>{t('އިތުރު މާނައެއް (ހިންޓް) ދައްކާ', 'Reveal another clue', lang)}</span>
+                <kbd
+                  dir="ltr"
+                  className="rounded border border-[#E4DCCE] bg-[#FAF7F2] px-1.5 py-0.5 font-mono text-[10px] font-semibold text-[#52636A] dark:border-[#213840] dark:bg-[#182C33] dark:text-[#9BB0B8]"
+                >
+                  H
+                </kbd>
               </button>
             )}
           </div>
@@ -721,34 +880,56 @@ export function GamesView({
               </div>
 
               {showChoices ? (
-                <div className="grid gap-2.5 sm:grid-cols-2">
-                  {clueChoices.map((choice) => {
-                    const alreadyGuessed = clueGuesses.some((g) => g.id === choice.id);
-                    return (
-                      <button
-                        key={choice.id}
-                        type="button"
-                        disabled={alreadyGuessed}
-                        onClick={() => handleClueGuess(choice.id)}
-                        className={`cursor-pointer rounded-2xl border p-3.5 text-start transition ${
-                          alreadyGuessed
-                            ? 'border-rose-300 bg-rose-50/70 text-rose-700 opacity-60 dark:border-rose-500/30 dark:bg-rose-950/30 dark:text-rose-300'
-                            : 'border-[#E4DCCE] bg-[#FAF7F2] hover:border-[#0D6E6E] hover:bg-white dark:border-[#213840] dark:bg-[#182C33] dark:hover:border-[#2DD4BF]'
-                        }`}
-                      >
-                        <div className="text-lg font-bold text-[#142126] dark:text-[#F1F5F9]">
-                          <span dir="rtl" className="inline-block">
-                            {choice.headword}
-                          </span>
-                        </div>
-                        {settings.showRomanization && (
-                          <div className="font-mono text-xs text-[#52636A] dark:text-[#9BB0B8]" dir="ltr">
-                            /{choice.romanized}/
+                <div className="space-y-2.5">
+                  <div className="grid gap-2.5 sm:grid-cols-2">
+                    {clueChoices.map((choice, idx) => {
+                      const alreadyGuessed = clueGuesses.some((g) => g.id === choice.id);
+                      return (
+                        <button
+                          key={choice.id}
+                          type="button"
+                          disabled={alreadyGuessed}
+                          onClick={() => handleClueGuess(choice.id)}
+                          className={`cursor-pointer rounded-2xl border p-3.5 text-start transition ${
+                            alreadyGuessed
+                              ? 'border-rose-300 bg-rose-50/70 text-rose-700 opacity-60 dark:border-rose-500/30 dark:bg-rose-950/30 dark:text-rose-300'
+                              : 'border-[#E4DCCE] bg-[#FAF7F2] hover:border-[#0D6E6E] hover:bg-white dark:border-[#213840] dark:bg-[#182C33] dark:hover:border-[#2DD4BF]'
+                          }`}
+                        >
+                          <div className="flex items-start justify-between gap-2">
+                            <div className="min-w-0 flex-1">
+                              <div className="text-lg font-bold text-[#142126] dark:text-[#F1F5F9]">
+                                <span dir="rtl" className="inline-block">
+                                  {choice.headword}
+                                </span>
+                              </div>
+                              {settings.showRomanization && (
+                                <div className="font-mono text-xs text-[#52636A] dark:text-[#9BB0B8]" dir="ltr">
+                                  /{choice.romanized}/
+                                </div>
+                              )}
+                            </div>
+                            <kbd
+                              dir="ltr"
+                              className="inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-md border border-[#E4DCCE] bg-white/90 font-mono text-[11px] font-semibold text-[#52636A] dark:border-[#213840] dark:bg-[#0F1E24] dark:text-[#9BB0B8]"
+                            >
+                              {idx + 1}
+                            </kbd>
                           </div>
-                        )}
-                      </button>
-                    );
-                  })}
+                        </button>
+                      );
+                    })}
+                  </div>
+                  <p
+                    dir={getUiDirection(lang)}
+                    className="text-center text-[11px] font-medium text-[#52636A] dark:text-[#9BB0B8]"
+                  >
+                    {t(
+                      'ކީބޯޑު: 1–4 ޖަވާބު ނެގުމަށް · H އިތުރު ހިންޓެއް',
+                      'Keyboard: 1–4 to pick · H for next clue',
+                      lang
+                    )}
+                  </p>
                 </div>
               ) : (
                 <div className="relative">
@@ -823,6 +1004,7 @@ export function GamesView({
               <div>
                 <button
                   type="button"
+                  data-clue-headword
                   dir="rtl"
                   onClick={() => onInspectId(clueTarget.id)}
                   className="font-display-thaana mt-1 cursor-pointer text-2xl font-bold text-[#0D6E6E] hover:underline dark:text-[#2DD4BF]"
@@ -835,7 +1017,28 @@ export function GamesView({
                   </p>
                 )}
               </div>
-              <div className="mt-3 flex flex-wrap justify-center gap-2">
+              <div
+                data-clue-postgame-actions
+                className="mt-3 flex flex-wrap justify-center gap-2"
+              >
+                <button
+                  type="button"
+                  onClick={handleClueNextRound}
+                  className="inline-flex cursor-pointer items-center gap-1.5 rounded-xl bg-[#D95D39] px-4 py-2 text-xs font-semibold text-white transition hover:bg-[#B84524] dark:bg-[#FB923C] dark:text-[#0B161A] dark:hover:bg-[#F97316]"
+                >
+                  <RotateCcw className="h-3.5 w-3.5" />
+                  <span>
+                    {cluePractice
+                      ? t('އައު ޕަޒަލްއެއް', 'Next Round', lang)
+                      : t('ތަމްރީނު ކުޅޭ (އައު ރައުންޑް)', 'Next Round (Practice)', lang)}
+                  </span>
+                  <kbd
+                    dir="ltr"
+                    className="rounded bg-black/15 px-1.5 py-0.5 font-mono text-[10px]"
+                  >
+                    Enter
+                  </kbd>
+                </button>
                 <button
                   type="button"
                   onClick={() =>
@@ -862,6 +1065,16 @@ export function GamesView({
                   {t('ބަސްފޮތުން ބަލާ', 'Inspect Word', lang)}
                 </button>
               </div>
+              <p
+                dir={getUiDirection(lang)}
+                className="mt-2 text-[11px] font-medium text-[#52636A] dark:text-[#9BB0B8]"
+              >
+                {t(
+                  'ދެން އޮތް ރައުންޑަށް ދިއުމަށް Enter ނުވަތަ Space ފިތާލާ',
+                  'Press Enter or Space for next round',
+                  lang
+                )}
+              </p>
               {shareMsg && (
                 <p className="mt-2 text-xs font-medium text-[#0D6E6E] dark:text-[#2DD4BF]">
                   {shareMsg}

@@ -75,7 +75,11 @@ export function WordInspectorDrawer({
   const textDir = getUiDirection(lang);
 
   return (
-    <div className="fixed inset-0 z-50 flex justify-end bg-black/40 backdrop-blur-[2px]">
+    <div
+      role="dialog"
+      aria-modal="true"
+      className="fixed inset-0 z-50 flex justify-end bg-black/40 backdrop-blur-[2px]"
+    >
       <div className="fixed inset-0" onClick={onClose} aria-hidden="true" />
       <aside
         className="relative z-10 flex h-full w-full max-w-xl flex-col border-l border-[#E4DCCE] bg-[#FAF7F2] shadow-2xl dark:border-[#213840] dark:bg-[#0B161A]"
