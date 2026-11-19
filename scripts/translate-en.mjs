@@ -845,10 +845,11 @@ async function callGeminiBatchWithRotation(keyPool, batch, opts, requestBudget) 
       }
 
       transientAttempts++;
-      if (transientAttempts > 3) {
-        throw new Error(`Transient error after 3 retries on ${slot.label}: ${cleanErr}`);
+      if (transientAttempts > 6) {
+        throw new Error(`Transient error after 6 retries on ${slot.label}: ${cleanErr}`);
       }
-      const backoff = 2000 * Math.pow(2, transientAttempts - 1);
+      const backoffs = [5000, 10000, 20000, 35000, 60000, 60000];
+      const backoff = backoffs[Math.min(transientAttempts - 1, backoffs.length - 1)];
       console.warn(`Transient error on ${slot.label} (${cleanErr}); retrying in ${backoff / 1000}s...`);
       await sleep(backoff);
     }
