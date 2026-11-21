@@ -1,5 +1,10 @@
 import { hydrateEntry, type CompactEntry } from '../lib/hydrate.ts';
-import { buildSearchIndex, executeSearch, type SearchIndex } from '../lib/search.ts';
+import {
+  buildSearchIndex,
+  executeSearch,
+  pickRandomEntryId,
+  type SearchIndex,
+} from '../lib/search.ts';
 import {
   hasThaana,
   latinToThaanaPhonetic,
@@ -103,6 +108,17 @@ function getEntryDetail(id: number) {
   };
 }
 
+function getRandomEntryDetail(payload?: Record<string, unknown>) {
+  if (!searchIndex) return null;
+  const randomId = pickRandomEntryId(searchIndex, {
+    filters: payload?.filters as SearchFilters | undefined,
+    excludeIds: (payload?.excludeIds as number[] | undefined) ?? [],
+    preferRich: payload?.preferRich !== false,
+    seed: typeof payload?.seed === 'number' ? payload.seed : undefined,
+  });
+  return randomId !== null ? getEntryDetail(randomId) : null;
+}
+
 function autocompleteHeadwords(query: string, limit: number = 10) {
   const q = query.trim();
   if (!q) return [];
@@ -163,6 +179,9 @@ self.onmessage = async (ev: MessageEvent) => {
       }
       case 'getEntryDetail':
         result = getEntryDetail(Number(payload?.id));
+        break;
+      case 'getRandomEntryDetail':
+        result = getRandomEntryDetail(payload);
         break;
       case 'getByHeadword': {
         const hw = String(payload?.headword ?? '').trim();

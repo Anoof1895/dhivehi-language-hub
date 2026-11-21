@@ -1,5 +1,6 @@
-import type { DictionaryEntry, UiLanguage } from '../types/dictionary.ts';
+import type { CategoryTag, DictionaryEntry, UiLanguage } from '../types/dictionary.ts';
 import {
+  CATEGORY_META,
   DIALECT_LABELS,
   INFERRED_WORDCLASS_LABELS,
   REGISTER_LABELS,
@@ -9,14 +10,21 @@ import {
   getUiDirection,
   t,
 } from '../lib/labels.ts';
+import { CategoryIcon } from './CategoryIcon.tsx';
 
 interface Props {
   entry: DictionaryEntry;
   lang: UiLanguage;
   compact?: boolean;
+  onSelectCategory?: (category: CategoryTag) => void;
 }
 
-export function MetadataBadges({ entry, lang, compact = false }: Props) {
+export function MetadataBadges({
+  entry,
+  lang,
+  compact = false,
+  onSelectCategory,
+}: Props) {
   const textDir = getUiDirection(lang);
   return (
     <div className="flex flex-wrap items-center gap-1.5">
@@ -51,6 +59,36 @@ export function MetadataBadges({ entry, lang, compact = false }: Props) {
           {formatBiLabel(WORDCLASS_LABELS.unclassified, lang)}
         </span>
       )}
+
+      {entry.categories?.map((cat) => {
+        const meta = CATEGORY_META[cat];
+        if (!meta) return null;
+        const labelText = formatBiLabel(compact ? meta.shortLabel : meta.label, lang);
+        if (onSelectCategory) {
+          return (
+            <button
+              key={cat}
+              type="button"
+              dir={textDir}
+              onClick={() => onSelectCategory(cat)}
+              className={`thaana-pill inline-flex cursor-pointer items-center gap-1 rounded-full px-2.5 text-xs font-medium transition hover:opacity-85 ${meta.badgeClass}`}
+            >
+              <CategoryIcon category={cat} className="h-3 w-3 shrink-0" />
+              <span>{labelText}</span>
+            </button>
+          );
+        }
+        return (
+          <span
+            key={cat}
+            dir={textDir}
+            className={`thaana-pill inline-flex items-center gap-1 rounded-full px-2.5 text-xs font-medium ${meta.badgeClass}`}
+          >
+            <CategoryIcon category={cat} className="h-3 w-3 shrink-0" />
+            <span>{labelText}</span>
+          </span>
+        );
+      })}
 
       {entry.dialects.map((d) => (
         <span

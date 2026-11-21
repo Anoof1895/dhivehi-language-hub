@@ -1,5 +1,6 @@
-import type { DailyTarget, DeckKey, GamePools } from '../types/dictionary.ts';
+import type { CategoryTag, DailyTarget, DeckKey, GamePools } from '../types/dictionary.ts';
 import { fnv1aHash, mulberry32 } from './date.ts';
+import { isTopicDeckKey } from './labels.ts';
 
 export interface DailyProgressState {
   dateKey: string;
@@ -17,11 +18,49 @@ export function buildActiveCandidatePool(
   const decks = activeDecks.length > 0 ? activeDecks : (['curated'] as DeckKey[]);
   const merged = new Set<number>();
   for (const d of decks) {
-    const list =
-      d === 'curated' ? pools.dailyCuratedIds : pools.deckPools[d] ?? [];
+    let list: number[];
+    if (isTopicDeckKey(d)) {
+      const cat = d.slice(6) as CategoryTag;
+      list = pools.categoryPools?.[cat] ?? [];
+    } else if (d === 'curated') {
+      list = pools.dailyCuratedIds;
+    } else {
+      list = pools.deckPools[d] ?? [];
+    }
     for (const id of list) merged.add(id);
   }
+  if (merged.size === 0) {
+    for (const id of pools.dailyCuratedIds) merged.add(id);
+  }
   return Array.from(merged);
+}
+
+/**
+ * Smart deck toggling:
+ * - If user is currently on default `['curated']` and clicks a specialized or Topic Study Deck,
+ *   switch directly to that deck (rather than diluting it inside 28,300 curated words).
+ * - If user clicks `'curated'` while on Topic Study Decks, switch cleanly back to `['curated']`.
+ * - If user unchecks the last remaining deck, fall back to `['curated']`.
+ */
+export function toggleActiveDeckSmart(
+  currentDecks: DeckKey[],
+  clickedDeck: DeckKey
+): DeckKey[] {
+  const exists = currentDecks.includes(clickedDeck);
+  if (exists) {
+    const next = currentDecks.filter((d) => d !== clickedDeck);
+    return next.length > 0 ? next : ['curated'];
+  }
+
+  if (clickedDeck === 'curated') {
+    return ['curated'];
+  }
+
+  if (currentDecks.length === 1 && currentDecks[0] === 'curated') {
+    return [clickedDeck];
+  }
+
+  return [...currentDecks.filter((d) => d !== 'curated'), clickedDeck];
 }
 
 export function pickReplacementWordId(
@@ -64,10 +103,14 @@ export function ensureDailyAssignments(
   const assigned = isSameDay ? [...existing.assignedIds] : [];
   const completed = isSameDay ? [...existing.completedIds] : [];
   const swapped = isSameDay ? [...existing.swappedIds] : [];
+  const poolSet = new Set<number>(pool);
 
-  // Remove any assigned words that were later marked known (unless already completed today)
+  // Keep completed words even if user switches topic decks mid-day;
+  // for uncompleted slots, require that they exist in the active pool and are not marked known.
   const filteredAssigned = assigned.filter(
-    (id) => !knownIds.has(id) || completed.includes(id)
+    (id) =>
+      completed.includes(id) ||
+      (!knownIds.has(id) && (poolSet.size === 0 || poolSet.has(id)))
   );
 
   const excluded = new Set<number>([

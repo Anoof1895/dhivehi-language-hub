@@ -9,6 +9,20 @@ export type DialectTag =
 
 export type RegisterTag = 'honorific' | 'figurative' | 'proverb';
 
+export type CategoryTag =
+  | 'maritime'
+  | 'marine'
+  | 'flora'
+  | 'food'
+  | 'weather'
+  | 'wildlife'
+  | 'body_health'
+  | 'culture_religion'
+  | 'arts_games'
+  | 'home_crafts'
+  | 'clothing'
+  | 'people_emotions';
+
 export type InferredWordclass =
   | 'phrase_proverb'
   | 'verbal_masdhar'
@@ -27,6 +41,7 @@ export interface DictionaryEntry {
   senses: string[];
   enGloss?: string;
   enMeaning?: string;
+  categories: CategoryTag[];
   dialects: DialectTag[];
   registers: RegisterTag[];
   synonymIds: number[];
@@ -46,6 +61,7 @@ export interface GamePools {
     figurative: number[];
     proverb: number[];
   };
+  categoryPools?: Record<CategoryTag, number[]>;
   wordle4AnswerIds: number[];
   wordle4ValidIds: number[];
   clueChallengeIds: number[];
@@ -77,29 +93,49 @@ export interface PipelineReport {
   englishTranslatedCount?: number;
   englishCoveragePct?: number;
   englishSources?: Record<string, number>;
+  categorizedEntryCount?: number;
+  categorizedCoveragePct?: number;
+  dualCategoryEntryCount?: number;
+  categoryCounts?: Record<CategoryTag, number>;
 }
+
+export type SearchMatchMode = 'any' | 'prefix' | 'suffix';
 
 export interface SearchFilters {
   query: string;
+  matchMode?: SearchMatchMode;
+  category?: CategoryTag | '';
   wordclass: string; // '' = all, 'unclassified' = blank
   dialect: DialectTag | '';
   register: RegisterTag | '';
   hasFamily: boolean;
   hasSynonyms: boolean;
   searchInDefinitions: boolean;
+  randomOrder?: boolean;
+  randomSeed?: number;
 }
 
 export interface SearchResultItem {
   id: number;
   score: number;
-  matchType: 'exact' | 'prefix' | 'romanized' | 'english' | 'contains' | 'definition' | 'reverse';
+  matchType:
+    | 'exact'
+    | 'prefix'
+    | 'suffix'
+    | 'romanized'
+    | 'english'
+    | 'contains'
+    | 'definition'
+    | 'reverse';
   snippet?: string;
 }
 
 export type UiLanguage = 'en' | 'dv';
 export type ThemeMode = 'light' | 'dark';
 export type DailyTarget = 1 | 3 | 5;
-export type DeckKey = 'curated' | 'honorific' | 'dialect' | 'figurative' | 'proverb';
+export type CoreDeckKey = 'curated' | 'honorific' | 'dialect' | 'figurative' | 'proverb';
+export type TopicDeckKey = `topic:${CategoryTag}`;
+export type DeckKey = CoreDeckKey | TopicDeckKey;
 
 export interface UserSettings {
   dailyTarget: DailyTarget;

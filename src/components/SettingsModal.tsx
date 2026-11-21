@@ -1,42 +1,43 @@
 import { useRef, useState } from 'react';
 import { X, Download, Upload, Sun, Moon, Languages, Database } from 'lucide-react';
 import type {
+  CategoryTag,
   DailyTarget,
   DeckKey,
   PipelineReport,
   UserSettings,
 } from '../types/dictionary.ts';
 import {
+  CATEGORY_KEYS,
+  CATEGORY_META,
+  CORE_DECK_KEYS,
   DECK_LABELS,
-  UI_LANGUAGE_OPTIONS,
+   UI_LANGUAGE_OPTIONS,
+  categoryToDeckKey,
   formatBiLabel,
   formatCount,
   getUiDirection,
   t,
 } from '../lib/labels.ts';
+import { toggleActiveDeckSmart } from '../lib/dailyQueue.ts';
 import { exportAllProgress, importAllProgress } from '../storage/db.ts';
+import { CategoryIcon } from './CategoryIcon.tsx';
 
 interface Props {
   open: boolean;
   settings: UserSettings;
   report: PipelineReport | null;
+  categoryPools?: Record<CategoryTag, number[]>;
   onClose: () => void;
   onUpdateSettings: (next: UserSettings) => void;
   onImported: () => void;
 }
 
-const DECK_OPTIONS: DeckKey[] = [
-  'curated',
-  'honorific',
-  'dialect',
-  'figurative',
-  'proverb',
-];
-
 export function SettingsModal({
   open,
   settings,
   report,
+  categoryPools,
   onClose,
   onUpdateSettings,
   onImported,
@@ -48,11 +49,7 @@ export function SettingsModal({
   if (!open) return null;
 
   const toggleDeck = (deck: DeckKey) => {
-    const exists = settings.activeDecks.includes(deck);
-    let next = exists
-      ? settings.activeDecks.filter((d) => d !== deck)
-      : [...settings.activeDecks, deck];
-    if (next.length === 0) next = ['curated'];
+    const next = toggleActiveDeckSmart(settings.activeDecks, deck);
     onUpdateSettings({ ...settings, activeDecks: next });
   };
 
@@ -75,11 +72,15 @@ export function SettingsModal({
       const text = await file.text();
       const parsed = JSON.parse(text);
       await importAllProgress(parsed);
-      setStatusMsg(t('ބެކަޕް ކާމިޔާބުކަމާއެކު ރީސްޓޯ ކުރެވިއްޖެ', 'Backup restored successfully!', lang));
+      setStatusMsg(
+        t('ބެކަޕް ކާމިޔާބުކަމާއެކު ރީސްޓޯ ކުރެވިއްޖެ', 'Backup restored successfully!', lang)
+      );
       onImported();
     } catch (err) {
       setStatusMsg(
-        err instanceof Error ? err.message : t('ފައިލް ކިޔުމުގައި މައްސަލައެއް', 'Invalid backup file', lang)
+        err instanceof Error
+          ? err.message
+          : t('ފައިލް ކިޔުމުގައި މައްސަލައެއް', 'Invalid backup file', lang)
       );
     }
   };
@@ -98,7 +99,10 @@ export function SettingsModal({
         dir="ltr"
       >
         <div className="flex items-center justify-between border-b border-[#E4DCCE] pb-3 dark:border-[#213840]">
-          <h2 dir={textDir} className="font-display-thaana text-xl font-bold text-[#142126] dark:text-[#F1F5F9]">
+          <h2
+            dir={textDir}
+            className="font-display-thaana text-xl font-bold text-[#142126] dark:text-[#F1F5F9]"
+          >
             {t('ސެޓިންގްސް އަދި ބެކަޕް', 'Settings & Backup', lang)}
           </h2>
           <button
@@ -114,7 +118,10 @@ export function SettingsModal({
         <div className="mt-5 space-y-5">
           {/* Daily Target */}
           <div>
-            <label className="block text-sm font-semibold text-[#142126] dark:text-[#F1F5F9]">
+            <label
+              dir={textDir}
+              className="block text-sm font-semibold text-[#142126] dark:text-[#F1F5F9]"
+            >
               {t('ދުވާލަކު ދަސްކުރާ ބަހުގެ އަދަދު', 'Daily Words Target', lang)}
             </label>
             <div className="mt-2 grid grid-cols-3 gap-2">
@@ -137,11 +144,14 @@ export function SettingsModal({
 
           {/* Study Decks */}
           <div>
-            <label className="block text-sm font-semibold text-[#142126] dark:text-[#F1F5F9]">
+            <label
+              dir={textDir}
+              className="block text-sm font-semibold text-[#142126] dark:text-[#F1F5F9]"
+            >
               {t('ދުވަހުގެ ބަސް ނެގޭނެ ބައިތައް', 'Active Study Decks', lang)}
             </label>
             <div className="mt-2 flex flex-wrap gap-2">
-              {DECK_OPTIONS.map((deck) => {
+              {CORE_DECK_KEYS.map((deck) => {
                 const active = settings.activeDecks.includes(deck);
                 return (
                   <button
@@ -155,6 +165,41 @@ export function SettingsModal({
                     }`}
                   >
                     {formatBiLabel(DECK_LABELS[deck], lang)}
+                  </button>
+                );
+              })}
+            </div>
+
+            <div
+              dir={textDir}
+              className="mt-3 text-xs font-semibold text-[#52636A] dark:text-[#9BB0B8]"
+            >
+              {t('މައުޟޫޢީ ބައިތައް (12):', 'Topic Study Decks (12):', lang)}
+            </div>
+            <div className="mt-1.5 flex flex-wrap gap-1.5">
+              {CATEGORY_KEYS.map((cat) => {
+                const deckKey = categoryToDeckKey(cat);
+                const meta = CATEGORY_META[cat];
+                const active = settings.activeDecks.includes(deckKey);
+                const count = categoryPools?.[cat]?.length;
+                return (
+                  <button
+                    key={deckKey}
+                    type="button"
+                    onClick={() => toggleDeck(deckKey)}
+                    className={`thaana-pill inline-flex cursor-pointer items-center gap-1.5 rounded-xl border px-2.5 py-1 text-xs font-semibold transition ${
+                      active
+                        ? 'border-[#0D6E6E] bg-[#0D6E6E] text-white dark:border-[#2DD4BF] dark:bg-[#2DD4BF] dark:text-[#0B161A]'
+                        : 'border-[#E4DCCE] bg-white text-[#52636A] dark:border-[#213840] dark:bg-[#132329] dark:text-[#9BB0B8]'
+                    }`}
+                  >
+                    <CategoryIcon category={cat} className="h-3 w-3 shrink-0" />
+                    <span dir={textDir}>{formatBiLabel(meta.shortLabel, lang)}</span>
+                    {typeof count === 'number' && (
+                      <span dir="ltr" className="font-mono text-[10px] opacity-80">
+                        {count.toLocaleString()}
+                      </span>
+                    )}
                   </button>
                 );
               })}
@@ -306,32 +351,63 @@ export function SettingsModal({
             <div className="rounded-2xl border border-[#E4DCCE] bg-[#F2ECE1]/60 p-4 text-xs dark:border-[#213840] dark:bg-[#132329]/70">
               <div className="mb-2 flex items-center gap-1.5 font-semibold text-[#142126] dark:text-[#F1F5F9]">
                 <Database className="h-4 w-4 text-[#0D6E6E] dark:text-[#2DD4BF]" />
-                <span>{t('ރަދީފު ޑޭޓާބޭސް ތަފާސްހިސާބު', 'Radheef Corpus Stats', lang)}</span>
+                <span>
+                  {t('ރަދީފު ޑޭޓާބޭސް ތަފާސްހިސާބު', 'Radheef Corpus Stats', lang)}
+                </span>
               </div>
               <div className="grid grid-cols-2 gap-y-1 text-[#52636A] dark:text-[#9BB0B8]">
                 <span>{t('ޖުމްލަ ބަސް:', 'Canonical words:', lang)}</span>
-                <span dir="ltr" className="font-mono font-semibold text-[#142126] dark:text-[#F1F5F9]">
+                <span
+                  dir="ltr"
+                  className="font-mono font-semibold text-[#142126] dark:text-[#F1F5F9]"
+                >
                   {report.canonicalEntryCount.toLocaleString()}
                 </span>
                 <span>{t('މާނަ ލިންކު:', 'Cross-links:', lang)}</span>
-                <span dir="ltr" className="font-mono font-semibold text-[#142126] dark:text-[#F1F5F9]">
+                <span
+                  dir="ltr"
+                  className="font-mono font-semibold text-[#142126] dark:text-[#F1F5F9]"
+                >
                   {report.totalCrossLinks.toLocaleString()}
                 </span>
                 <span>{t('އާއިލާ ގްރޫޕް:', 'Root families:', lang)}</span>
-                <span dir="ltr" className="font-mono font-semibold text-[#142126] dark:text-[#F1F5F9]">
+                <span
+                  dir="ltr"
+                  className="font-mono font-semibold text-[#142126] dark:text-[#F1F5F9]"
+                >
                   {report.entriesWithFamily.toLocaleString()}
                 </span>
                 <span>{t('ބަސްލީ ލަފުޒު:', '4-syllable Wordle:', lang)}</span>
-                <span dir="ltr" className="font-mono font-semibold text-[#142126] dark:text-[#F1F5F9]">
+                <span
+                  dir="ltr"
+                  className="font-mono font-semibold text-[#142126] dark:text-[#F1F5F9]"
+                >
                   {report.wordle4ValidCount.toLocaleString()}
                 </span>
                 {typeof report.englishTranslatedCount === 'number' && (
                   <>
                     <span>{t('އިނގިރޭސި މާނަ:', 'English coverage:', lang)}</span>
-                    <span dir="ltr" className="font-mono font-semibold text-[#142126] dark:text-[#F1F5F9]">
+                    <span
+                      dir="ltr"
+                      className="font-mono font-semibold text-[#142126] dark:text-[#F1F5F9]"
+                    >
                       {report.englishTranslatedCount.toLocaleString()}
                       {typeof report.englishCoveragePct === 'number'
                         ? ` (${report.englishCoveragePct}%)`
+                        : ''}
+                    </span>
+                  </>
+                )}
+                {typeof report.categorizedEntryCount === 'number' && (
+                  <>
+                    <span>{t('މައުޟޫޢީ ބަސް:', 'Thematic topics (12):', lang)}</span>
+                    <span
+                      dir="ltr"
+                      className="font-mono font-semibold text-[#142126] dark:text-[#F1F5F9]"
+                    >
+                      {report.categorizedEntryCount.toLocaleString()}
+                      {typeof report.categorizedCoveragePct === 'number'
+                        ? ` (${report.categorizedCoveragePct}%)`
                         : ''}
                     </span>
                   </>

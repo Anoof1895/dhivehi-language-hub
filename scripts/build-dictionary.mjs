@@ -8,6 +8,7 @@ import {
   THAANA_BASE_CONSONANTS,
 } from '../src/lib/thaanaCore.js';
 import { applyLettersAndSynonymPropagation } from './lib/en-translation-utils.mjs';
+import { CATEGORY_KEYS, classifyEntryCategories } from './lib/categories.mjs';
 
 const WORKSPACE_ROOT = process.cwd();
 const RAW_JSON_PATH = path.join(WORKSPACE_ROOT, 'radheef.json');
@@ -225,6 +226,10 @@ function main() {
       draft: 0,
       synonymPropagated: 0,
     },
+    categorizedEntryCount: 0,
+    categorizedCoveragePct: 0,
+    dualCategoryEntryCount: 0,
+    categoryCounts: {},
   };
 
   // Phase 1: Clean and group by canonical headword
@@ -565,6 +570,39 @@ function main() {
     synonymPropagated: enStats.synonymPropagated,
   };
 
+  // Phase 7: Thematic Maldivian Categories (Bilingual Taxonomy across Dhivehi + Resolved English)
+  const categoryPools = {};
+  for (const catKey of CATEGORY_KEYS) {
+    stats.categoryCounts[catKey] = 0;
+    categoryPools[catKey] = [];
+  }
+
+  for (const e of entries) {
+    const tr = resolvedByHeadword.get(e.headword);
+    const categories = classifyEntryCategories({
+      headword: e.headword,
+      senses: e.senses,
+      enGloss: tr?.enGloss,
+      enMeaning: tr?.enMeaning,
+    });
+    e.categories = categories;
+    if (categories.length > 0) {
+      stats.categorizedEntryCount++;
+      if (categories.length > 1) {
+        stats.dualCategoryEntryCount++;
+      }
+      for (const catKey of categories) {
+        stats.categoryCounts[catKey] = (stats.categoryCounts[catKey] || 0) + 1;
+        if (e.isCuratedDaily) {
+          categoryPools[catKey].push(e.id);
+        }
+      }
+    }
+  }
+  stats.categorizedCoveragePct = Number(
+    ((stats.categorizedEntryCount / entries.length) * 100).toFixed(2)
+  );
+
   // Write compact JSON artifacts (omitting empty/default fields to keep PWA bundle lean)
   const compactEntries = entries.map((e) => {
     const c = {
@@ -578,6 +616,7 @@ function main() {
     const tr = resolvedByHeadword.get(e.headword);
     if (tr?.enGloss) c.eg = tr.enGloss;
     if (tr?.enMeaning) c.em = tr.enMeaning;
+    if (e.categories?.length) c.ct = e.categories;
     if (e.wordclasses.length) c.wc = e.wordclasses;
     if (e.inferredWordclass) c.iw = e.inferredWordclass;
     if (e.dialects.length) c.d = e.dialects;
@@ -600,6 +639,7 @@ function main() {
     JSON.stringify({
       dailyCuratedIds,
       deckPools,
+      categoryPools,
       wordle4AnswerIds,
       wordle4ValidIds,
       clueChallengeIds,

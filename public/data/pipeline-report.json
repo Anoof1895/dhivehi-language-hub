@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-11-19T08:12:34.890Z",
+  "generatedAt": "2026-11-21T12:54:22.203Z",
   "rawEntryCount": 38778,
   "canonicalEntryCount": 38719,
   "mergedDuplicateGroups": 59,
@@ -44,5 +44,22 @@
     "polish": 30997,
     "draft": 0,
     "synonymPropagated": 7677
+  },
+  "categorizedEntryCount": 18308,
+  "categorizedCoveragePct": 47.28,
+  "dualCategoryEntryCount": 2087,
+  "categoryCounts": {
+    "maritime": 1463,
+    "marine": 1923,
+    "flora": 3010,
+    "food": 1334,
+    "weather": 895,
+    "wildlife": 1267,
+    "body_health": 2272,
+    "culture_religion": 1667,
+    "arts_games": 953,
+    "home_crafts": 2699,
+    "clothing": 1121,
+    "people_emotions": 1791
   }
 }

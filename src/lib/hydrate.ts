@@ -1,4 +1,5 @@
 import type {
+  CategoryTag,
   DialectTag,
   DictionaryEntry,
   InferredWordclass,
@@ -14,6 +15,7 @@ export interface CompactEntry {
   s: string[];
   eg?: string;
   em?: string;
+  ct?: CategoryTag[];
   wc?: string[];
   iw?: InferredWordclass;
   d?: DialectTag[];
@@ -40,6 +42,7 @@ export function hydrateEntry(c: CompactEntry): DictionaryEntry {
     senses: c.s,
     enGloss: c.eg,
     enMeaning: c.em,
+    categories: c.ct ?? [],
     dialects: c.d ?? [],
     registers: c.rg ?? [],
     synonymIds: c.sy ?? [],

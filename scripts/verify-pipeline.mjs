@@ -3,6 +3,7 @@ import path from 'node:path';
 import zlib from 'node:zlib';
 import assert from 'node:assert/strict';
 import { segmentGraphemes, THAANA_BASE_CONSONANTS } from '../src/lib/thaanaCore.js';
+import { CATEGORY_KEYS } from './lib/categories.mjs';
 
 const DATA_DIR = path.join(process.cwd(), 'public', 'data');
 
@@ -118,6 +119,108 @@ if (loabi?.eg || loabi?.em) {
   assert.ok(
     haharu.eg && haharu.em,
     'Pure synonym stub ހަހަރު must inherit English translation from ލޯބި'
+  );
+}
+
+// 6. Thematic Maldivian Categories (12 topics, ct tags, categoryPools, benchmark words)
+const validCategorySet = new Set(CATEGORY_KEYS);
+const actualCategoryCounts = Object.fromEntries(CATEGORY_KEYS.map((k) => [k, 0]));
+let actualCategorizedEntries = 0;
+
+for (const e of core) {
+  if (e.ct !== undefined) {
+    assert.ok(Array.isArray(e.ct), `ct must be array on ${e.h}`);
+    assert.ok(
+      e.ct.length >= 1 && e.ct.length <= 2,
+      `ct length must be 1..2 on ${e.h}: ${JSON.stringify(e.ct)}`
+    );
+    assert.equal(new Set(e.ct).size, e.ct.length, `Duplicate category in ct on ${e.h}`);
+    actualCategorizedEntries++;
+    for (const cat of e.ct) {
+      assert.ok(validCategorySet.has(cat), `Unknown category "${cat}" on ${e.h}`);
+      actualCategoryCounts[cat]++;
+    }
+  }
+}
+
+assert.equal(
+  actualCategorizedEntries,
+  report.categorizedEntryCount,
+  'categorizedEntryCount in pipeline-report.json must match dictionary-core.json'
+);
+assert.ok(
+  actualCategorizedEntries >= 15000,
+  `Expected at least 15,000 categorized entries, got ${actualCategorizedEntries}`
+);
+
+for (const ch of THAANA_BASE_CONSONANTS) {
+  const letterEntry = byHw.get(ch);
+  if (letterEntry) {
+    assert.equal(
+      letterEntry.ct,
+      undefined,
+      `Single Thaana letter ${ch} must not be assigned a thematic category`
+    );
+  }
+}
+
+assert.ok(pools.categoryPools && typeof pools.categoryPools === 'object', 'pools.categoryPools must exist');
+for (const cat of CATEGORY_KEYS) {
+  assert.equal(
+    actualCategoryCounts[cat],
+    report.categoryCounts?.[cat],
+    `report.categoryCounts.${cat} mismatch`
+  );
+  assert.ok(
+    actualCategoryCounts[cat] >= 700,
+    `Category ${cat} must have >= 700 entries, got ${actualCategoryCounts[cat]}`
+  );
+  const poolList = pools.categoryPools[cat];
+  assert.ok(Array.isArray(poolList), `pools.categoryPools.${cat} must be an array`);
+  assert.ok(
+    poolList.length >= 500,
+    `pools.categoryPools.${cat} must have >= 500 curated entries, got ${poolList.length}`
+  );
+  for (const id of poolList) {
+    const entry = core[id];
+    assert.ok(entry && entry.ct?.includes(cat), `Entry #${id} in categoryPools.${cat} missing ct tag`);
+    assert.equal(entry.cd, 1, `Entry #${id} in categoryPools.${cat} must be curated daily (cd=1)`);
+  }
+}
+
+const categoryBenchmarks = [
+  ['ދޯނި', 'maritime'],
+  ['މަސްދޯނި', 'maritime'],
+  ['ކަޅުބިލަމަސް', 'marine'],
+  ['ފާނަ', 'marine'],
+  ['ރުއް', 'flora'],
+  ['ކުރުނބާ', 'flora'],
+  ['ގަރުދިޔަ', 'food'],
+  ['ރިހާކުރު', 'food'],
+  ['ނަކަތް', 'weather'],
+  ['ވިއްސާރަ', 'weather'],
+  ['ކިރުދޫނި', 'wildlife'],
+  ['މާކަނާ', 'wildlife'],
+  ['ބަލި', 'body_health'],
+  ['ދިވެހިބޭސް', 'body_health'],
+  ['ނަމާދު', 'culture_religion'],
+  ['ރަސްގެފާނު', 'culture_religion'],
+  ['ބޮޑުބެރު', 'arts_games'],
+  ['ރައިވަރު', 'arts_games'],
+  ['ތުނޑުކުނާ', 'home_crafts'],
+  ['ލިޔެލާޖެހުން', 'home_crafts'],
+  ['ލިބާސް', 'clothing'],
+  ['ފޭލި', 'clothing'],
+  ['ލޯބި', 'people_emotions'],
+  ['ކައިވެނި', 'people_emotions'],
+];
+
+for (const [hw, expectedCat] of categoryBenchmarks) {
+  const entry = byHw.get(hw);
+  assert.ok(entry, `Benchmark headword ${hw} must exist`);
+  assert.ok(
+    entry.ct?.includes(expectedCat),
+    `Benchmark ${hw} expected category "${expectedCat}", got ${JSON.stringify(entry.ct)}`
   );
 }
 

@@ -9,9 +9,15 @@ import {
   Languages,
   Link2,
   Sparkles,
+  Dices,
+  Share2,
 } from 'lucide-react';
 import type { EntryDetailPayload } from '../hooks/useDictionary.ts';
-import type { UiLanguage } from '../types/dictionary.ts';
+import type {
+  CategoryTag,
+  DictionaryEntry,
+  UiLanguage,
+} from '../types/dictionary.ts';
 import { getUiDirection, t } from '../lib/labels.ts';
 import { EnglishSummary } from './EnglishSummary.tsx';
 import { MetadataBadges } from './MetadataBadges.tsx';
@@ -35,6 +41,9 @@ interface Props {
   onAddToSrs: (id: number) => void;
   onToggleKnown: (id: number) => void;
   onToggleEnglish: (enabled: boolean) => void;
+  onNextRandom: () => void;
+  onShareEntry: (entry: DictionaryEntry) => void;
+  onSelectCategory?: (category: CategoryTag) => void;
 }
 
 export function WordInspectorDrawer({
@@ -55,6 +64,9 @@ export function WordInspectorDrawer({
   onAddToSrs,
   onToggleKnown,
   onToggleEnglish,
+  onNextRandom,
+  onShareEntry,
+  onSelectCategory,
 }: Props) {
   const [trailLabels, setTrailLabels] = useState<Record<number, string>>({});
 
@@ -102,11 +114,26 @@ export function WordInspectorDrawer({
                 <span dir={textDir}>{t('ފަހަތަށް', 'Back', lang)}</span>
               </button>
             )}
-            <span dir={textDir} className="text-sm font-semibold text-[#52636A] dark:text-[#9BB0B8]">
+            <span
+              dir={textDir}
+              className="text-sm font-semibold text-[#52636A] dark:text-[#9BB0B8]"
+            >
               {t('ބަހުގެ ތަފްޞީލު', 'Word Inspector', lang)}
             </span>
           </div>
           <div className="flex items-center gap-1.5">
+            <button
+              type="button"
+              onClick={onNextRandom}
+              disabled={loading}
+              title={t('އެހެން ރެންޑަމް ބަހެއް', 'Next Random Word', lang)}
+              className="inline-flex cursor-pointer items-center gap-1 rounded-xl border border-[#D95D39]/40 bg-[#D95D39]/12 px-2.5 py-1 text-xs font-semibold text-[#B84524] transition hover:bg-[#D95D39]/20 disabled:opacity-50 dark:border-[#FB923C]/40 dark:bg-[#FB923C]/15 dark:text-[#FB923C]"
+            >
+              <Dices className="h-3.5 w-3.5" />
+              <span className="hidden sm:inline" dir={textDir}>
+                {t('އެހެން ބަހެއް', 'Next Random', lang)}
+              </span>
+            </button>
             <button
               type="button"
               onClick={() => onToggleEnglish(!showEnglish)}
@@ -173,14 +200,23 @@ export function WordInspectorDrawer({
             <div className="space-y-6">
               {/* Headword Hero */}
               <div className="rounded-2xl border border-[#E4DCCE] bg-white p-5 shadow-xs dark:border-[#213840] dark:bg-[#132329]">
-                <div dir="rtl" className="flex flex-wrap items-start justify-between gap-3">
+                <div
+                  dir="rtl"
+                  className="flex flex-wrap items-start justify-between gap-3"
+                >
                   <div>
-                    <h2 dir="rtl" className="font-display-thaana text-right text-3xl font-bold text-[#142126] dark:text-[#F1F5F9]">
+                    <h2
+                      dir="rtl"
+                      className="font-display-thaana text-right text-3xl font-bold text-[#142126] dark:text-[#F1F5F9]"
+                    >
                       {entry.headword}
                     </h2>
                     {showRomanization && entry.romanized && (
                       <div className="mt-1 text-right">
-                        <span className="inline-block font-mono text-xs tracking-wide text-[#52636A] dark:text-[#9BB0B8]" dir="ltr">
+                        <span
+                          className="inline-block font-mono text-xs tracking-wide text-[#52636A] dark:text-[#9BB0B8]"
+                          dir="ltr"
+                        >
                           /{entry.romanized}/
                         </span>
                       </div>
@@ -226,15 +262,26 @@ export function WordInspectorDrawer({
                 </div>
 
                 <div dir="rtl" className="mt-3">
-                  <MetadataBadges entry={entry} lang={lang} />
+                  <MetadataBadges
+                    entry={entry}
+                    lang={lang}
+                    onSelectCategory={onSelectCategory}
+                  />
                 </div>
 
                 <EnglishSummary entry={entry} showEnglish={showEnglish} />
 
                 {/* Hyperlinked Definitions */}
                 <div className="mt-5 space-y-2.5 border-t border-[#E4DCCE]/70 pt-4 dark:border-[#213840]">
-                  <p dir={textDir} className="text-xs font-semibold text-[#52636A] dark:text-[#9BB0B8]">
-                    {t('މާނަ (ކޮންމެ ބަހަކަށް ކްލިކްކޮށްގެން ހޯދޭނެ)', 'Meanings (click any highlighted word)', lang)}
+                  <p
+                    dir={textDir}
+                    className="text-xs font-semibold text-[#52636A] dark:text-[#9BB0B8]"
+                  >
+                    {t(
+                      'މާނަ (ކޮންމެ ބަހަކަށް ކްލިކްކޮށްގެން ހޯދޭނެ)',
+                      'Meanings (click any highlighted word)',
+                      lang
+                    )}
                   </p>
                   <ol dir="rtl" className="space-y-2.5">
                     {entry.senses.map((sense, sIdx) => (
@@ -262,7 +309,9 @@ export function WordInspectorDrawer({
                 <section className="rounded-2xl border border-[#E4DCCE] bg-white p-4 dark:border-[#213840] dark:bg-[#132329]">
                   <div className="mb-2.5 flex items-center gap-2 text-xs font-semibold text-[#D95D39] dark:text-[#FB923C]">
                     <Sparkles className="h-4 w-4" />
-                    <span>{t('އަޞްލު ނުވަތަ ގުޅޭ ބަސް', 'Derived Base / Register Link', lang)}</span>
+                    <span>
+                      {t('އަޞްލު ނުވަތަ ގުޅޭ ބަސް', 'Derived Base / Register Link', lang)}
+                    </span>
                   </div>
                   <div className="flex flex-wrap gap-2">
                     {detail.explicitBaseEntries.map((b) => (
@@ -330,7 +379,11 @@ export function WordInspectorDrawer({
               {detail.synonymEntries.length > 0 && (
                 <section className="rounded-2xl border border-[#E4DCCE] bg-white p-4 dark:border-[#213840] dark:bg-[#132329]">
                   <div className="mb-2.5 text-xs font-semibold text-[#52636A] dark:text-[#9BB0B8]">
-                    {t('އެއްމާނަ ބަސްތައް (ތެސޯރަސް)', 'Synonyms & Cross-References', lang)}
+                    {t(
+                      'އެއްމާނަ ބަސްތައް (ތެސޯރަސް)',
+                      'Synonyms & Cross-References',
+                      lang
+                    )}
                   </div>
                   <div className="flex flex-wrap gap-2">
                     {detail.synonymEntries.map((syn) => (
@@ -353,7 +406,11 @@ export function WordInspectorDrawer({
                 <div className="mb-3 flex items-center justify-between">
                   <span className="flex items-center gap-1.5 text-xs font-semibold text-[#52636A] dark:text-[#9BB0B8]">
                     <Link2 className="h-4 w-4 text-[#0D6E6E] dark:text-[#2DD4BF]" />
-                    {t('ރިވާސް ޑިކްޝަނަރީ — މި ބަސް ހިމެނޭ މާނަތައް', 'Reverse Dictionary — Referenced In', lang)}
+                    {t(
+                      'ރިވާސް ޑިކްޝަނަރީ — މި ބަސް ހިމެނޭ މާނަތައް',
+                      'Reverse Dictionary — Referenced In',
+                      lang
+                    )}
                   </span>
                   <span className="rounded-full bg-[#F2ECE1] px-2 py-0.5 text-[11px] font-semibold text-[#52636A] dark:bg-[#182C33] dark:text-[#9BB0B8]">
                     {detail.totalBacklinks.toLocaleString()}
@@ -362,7 +419,11 @@ export function WordInspectorDrawer({
 
                 {detail.backlinkEntries.length === 0 ? (
                   <p className="text-xs text-[#52636A] dark:text-[#9BB0B8]">
-                    {t('އެހެން ބަހެއްގެ މާނައިގައި މި ބަސް ބޭނުންކޮށްފައެއް ނުވެއެވެ.', 'Not referenced inside other definitions.', lang)}
+                    {t(
+                      'އެހެން ބަހެއްގެ މާނައިގައި މި ބަސް ބޭނުންކޮށްފައެއް ނުވެއެވެ.',
+                      'Not referenced inside other definitions.',
+                      lang
+                    )}
                   </p>
                 ) : (
                   <div className="space-y-2">
@@ -378,7 +439,8 @@ export function WordInspectorDrawer({
                           {ref.headword}
                         </div>
                         <div className="mt-0.5 line-clamp-2 text-xs text-[#52636A] dark:text-[#9BB0B8]">
-                          {ref.senses.find((s) => s.includes(entry.headword)) ?? ref.senses[0]}
+                          {ref.senses.find((s) => s.includes(entry.headword)) ??
+                            ref.senses[0]}
                         </div>
                         {showEnglish && ref.enGloss && (
                           <div
@@ -395,6 +457,36 @@ export function WordInspectorDrawer({
               </section>
             </div>
           )}
+        </div>
+
+        {/* Sticky Discovery & Share Footer */}
+        <div className="flex items-center justify-between gap-2 border-t border-[#E4DCCE] bg-white/95 px-4 py-3 backdrop-blur dark:border-[#213840] dark:bg-[#132329]/95">
+          {entry ? (
+            <button
+              type="button"
+              onClick={() => onShareEntry(entry)}
+              className="inline-flex cursor-pointer items-center gap-1.5 rounded-xl border border-[#E4DCCE] bg-[#FAF7F2] px-3.5 py-2 text-xs font-semibold text-[#142126] transition hover:border-[#0D6E6E] hover:text-[#0D6E6E] dark:border-[#213840] dark:bg-[#182C33] dark:text-[#F1F5F9] dark:hover:border-[#2DD4BF] dark:hover:text-[#2DD4BF]"
+            >
+              <Share2 className="h-4 w-4 text-[#0D6E6E] dark:text-[#2DD4BF]" />
+              <span dir={textDir}>
+                {t('ބަސް ކާޑު ޙިއްޞާކުރޭ (PNG)', 'Share Card (PNG)', lang)}
+              </span>
+            </button>
+          ) : (
+            <div />
+          )}
+
+          <button
+            type="button"
+            onClick={onNextRandom}
+            disabled={loading}
+            className="inline-flex cursor-pointer items-center gap-1.5 rounded-xl bg-[#D95D39] px-4 py-2 text-xs font-semibold text-white shadow-xs transition hover:bg-[#B84524] disabled:opacity-50 dark:bg-[#FB923C] dark:text-[#0B161A]"
+          >
+            <Dices className="h-4 w-4" />
+            <span dir={textDir}>
+              {t('އެހެން ރެންޑަމް ބަހެއް', 'Next Random Word', lang)}
+            </span>
+          </button>
         </div>
       </aside>
     </div>

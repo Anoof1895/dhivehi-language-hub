@@ -10,9 +10,11 @@ import {
   Languages,
 } from 'lucide-react';
 import type {
+  CategoryTag,
   DailyTarget,
   DeckKey,
   DictionaryEntry,
+  SearchFilters,
   UserSettings,
 } from './types/dictionary.ts';
 import {
@@ -42,6 +44,7 @@ import {
   buildActiveCandidatePool,
   ensureDailyAssignments,
   pickReplacementWordId,
+  toggleActiveDeckSmart,
   type DailyProgressState,
 } from './lib/dailyQueue.ts';
 import { getMaleDateKey, getPreviousDateKey } from './lib/date.ts';
@@ -57,6 +60,7 @@ import { GamesView } from './views/GamesView.tsx';
 import { ReviewView } from './views/ReviewView.tsx';
 import { WordInspectorDrawer } from './components/WordInspectorDrawer.tsx';
 import { SettingsModal } from './components/SettingsModal.tsx';
+import { ShareWordCardModal } from './components/ShareWordCardModal.tsx';
 
 type NavTab = 'daily' | 'dictionary' | 'games' | 'review';
 
@@ -70,6 +74,7 @@ export function App() {
     search,
     getEntries,
     getEntryDetail,
+    getRandomEntryDetail,
     getByHeadword,
     checkWordleGuess,
     autocomplete,
@@ -89,6 +94,13 @@ export function App() {
   const [inspectorTrail, setInspectorTrail] = useState<number[]>([]);
   const [inspectorLoading, setInspectorLoading] = useState(false);
   const [inspectorDetail, setInspectorDetail] = useState<EntryDetailPayload | null>(null);
+  const [lastRandomFilters, setLastRandomFilters] = useState<SearchFilters | null>(null);
+
+  // External category jump state (e.g. clicking a topic badge inside drawer or daily card)
+  const [pendingCategory, setPendingCategory] = useState<CategoryTag | ''>('');
+
+  // Share Word Card Modal state
+  const [shareEntry, setShareEntry] = useState<DictionaryEntry | null>(null);
 
   // Settings Modal state
   const [settingsOpen, setSettingsOpen] = useState(false);
@@ -240,6 +252,51 @@ export function App() {
     setInspectorLoading(false);
   };
 
+  const handleSurpriseMe = async (filters: SearchFilters) => {
+    setLastRandomFilters(filters);
+    setDrawerOpen(true);
+    setInspectorLoading(true);
+    const detail = await getRandomEntryDetail({
+      filters,
+      excludeIds: inspectorTrail,
+      preferRich: true,
+    });
+    if (detail) {
+      setInspectorTrail((prev) =>
+        prev[prev.length - 1] === detail.entry.id
+          ? prev
+          : [...prev, detail.entry.id]
+      );
+      setInspectorDetail(detail);
+    }
+    setInspectorLoading(false);
+  };
+
+  const handleNextRandomInDrawer = async () => {
+    setDrawerOpen(true);
+    setInspectorLoading(true);
+    const detail = await getRandomEntryDetail({
+      filters: tab === 'dictionary' && lastRandomFilters ? lastRandomFilters : undefined,
+      excludeIds: inspectorTrail,
+      preferRich: true,
+    });
+    if (detail) {
+      setInspectorTrail((prev) =>
+        prev[prev.length - 1] === detail.entry.id
+          ? prev
+          : [...prev, detail.entry.id]
+      );
+      setInspectorDetail(detail);
+    }
+    setInspectorLoading(false);
+  };
+
+  const handleSelectCategoryJump = (category: CategoryTag) => {
+    setDrawerOpen(false);
+    setPendingCategory(category);
+    setTab('dictionary');
+  };
+
   const jumpTrailIndex = async (idx: number) => {
     if (idx < 0 || idx >= inspectorTrail.length) return;
     const targetId = inspectorTrail[idx];
@@ -328,7 +385,7 @@ export function App() {
     ]);
 
     const nextAssigned = [...kept];
-    let salt = dailyProgress.swappedIds.length + skipped.length + Date.now() % 10000;
+    let salt = dailyProgress.swappedIds.length + skipped.length + (Date.now() % 10000);
     while (nextAssigned.length < settings.dailyTarget) {
       const pick = pickReplacementWordId(pool, excluded, dateKey, salt++);
       if (pick === null) break;
@@ -405,13 +462,13 @@ export function App() {
     >
       {/* Top Header */}
       <header className="sticky top-0 z-30 border-b border-[#E4DCCE] bg-[#FAF7F2]/90 backdrop-blur-md dark:border-[#213840] dark:bg-[#0B161A]/90">
-        <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3 sm:px-6">
-          <div className="flex min-w-0 items-center gap-3">
-            <img src="/icon.svg" alt="" className="h-9 w-9 shrink-0 rounded-xl shadow-xs" />
+        <div className="mx-auto flex max-w-6xl items-center justify-between gap-2 px-3 py-2.5 sm:px-6 sm:py-3">
+          <div className="flex min-w-0 items-center gap-2 sm:gap-3">
+            <img src="/icon.svg" alt="" className="h-8 w-8 sm:h-9 sm:w-9 shrink-0 rounded-xl shadow-xs" />
             <div className="min-w-0 text-left">
               <div
                 dir={textDir}
-                className="font-display-thaana min-h-7 truncate text-left text-lg font-bold leading-7 text-[#142126] dark:text-[#F1F5F9]"
+                className="font-display-thaana min-h-6 sm:min-h-7 whitespace-nowrap text-left text-[15px] sm:text-lg font-bold leading-6 sm:leading-7 text-[#142126] dark:text-[#F1F5F9]"
               >
                 {t('ދިވެހި ބަހުގެ މަރުކަޒު', 'Dhivehi Language Hub', lang)}
               </div>
@@ -428,7 +485,7 @@ export function App() {
             </div>
           </div>
 
-          <div className="flex shrink-0 items-center gap-1.5 sm:gap-2">
+          <div className="flex shrink-0 items-center gap-1 sm:gap-2">
             {/* 2-way Segmented Language Switcher (Desktop/Tablet) */}
             <div
               role="group"
@@ -471,9 +528,9 @@ export function App() {
                 })
               }
               aria-label="Switch UI language"
-              className="inline-flex min-w-[4.75rem] cursor-pointer items-center justify-center gap-1 rounded-xl border border-[#E4DCCE] bg-white px-2.5 py-2 text-xs font-semibold text-[#142126] transition hover:bg-[#F2ECE1] sm:hidden dark:border-[#213840] dark:bg-[#132329] dark:text-[#F1F5F9]"
+              className="inline-flex cursor-pointer items-center justify-center gap-1 rounded-xl border border-[#E4DCCE] bg-white px-2 py-1.5 text-xs font-semibold text-[#142126] transition hover:bg-[#F2ECE1] sm:hidden dark:border-[#213840] dark:bg-[#132329] dark:text-[#F1F5F9]"
             >
-              <Languages className="h-4 w-4 shrink-0 text-[#0D6E6E] dark:text-[#2DD4BF]" />
+              <Languages className="h-3.5 w-3.5 shrink-0 text-[#0D6E6E] dark:text-[#2DD4BF]" />
               <span>{activeLangOption.shortLabel}</span>
             </button>
 
@@ -486,7 +543,7 @@ export function App() {
                 })
               }
               aria-label="Toggle theme"
-              className="cursor-pointer rounded-xl border border-[#E4DCCE] bg-white p-2 text-[#142126] transition hover:bg-[#F2ECE1] dark:border-[#213840] dark:bg-[#132329] dark:text-[#F1F5F9]"
+              className="cursor-pointer rounded-xl border border-[#E4DCCE] bg-white p-1.5 sm:p-2 text-[#142126] transition hover:bg-[#F2ECE1] dark:border-[#213840] dark:bg-[#132329] dark:text-[#F1F5F9]"
             >
               {settings.theme === 'light' ? (
                 <Moon className="h-4 w-4" />
@@ -499,7 +556,7 @@ export function App() {
               type="button"
               onClick={() => setSettingsOpen(true)}
               aria-label="Settings and backup"
-              className="cursor-pointer rounded-xl border border-[#E4DCCE] bg-white p-2 text-[#142126] transition hover:bg-[#F2ECE1] dark:border-[#213840] dark:bg-[#132329] dark:text-[#F1F5F9]"
+              className="cursor-pointer rounded-xl border border-[#E4DCCE] bg-white p-1.5 sm:p-2 text-[#142126] transition hover:bg-[#F2ECE1] dark:border-[#213840] dark:bg-[#132329] dark:text-[#F1F5F9]"
             >
               <Settings className="h-4 w-4" />
             </button>
@@ -527,7 +584,9 @@ export function App() {
                 >
                   <span className="flex min-w-0 items-center gap-2.5">
                     <Icon className="h-4 w-4 shrink-0" />
-                    <span dir={textDir} className="truncate leading-normal">{t(item.dv, item.en, lang)}</span>
+                    <span dir={textDir} className="truncate leading-normal">
+                      {t(item.dv, item.en, lang)}
+                    </span>
                   </span>
                   {item.badge !== undefined && item.badge > 0 && (
                     <span
@@ -566,16 +625,13 @@ export function App() {
                   dailyEntries={dailyEntries}
                   familyLookup={entriesById}
                   headwordSet={headwordSet}
+                  categoryPools={gamePools?.categoryPools}
                   loading={dailyEntries.length === 0 && !userDataLoaded}
                   onChangeTarget={(dailyTarget: DailyTarget) =>
                     updateSettings({ ...settings, dailyTarget })
                   }
                   onToggleDeck={(deck: DeckKey) => {
-                    const exists = settings.activeDecks.includes(deck);
-                    let next = exists
-                      ? settings.activeDecks.filter((d) => d !== deck)
-                      : [...settings.activeDecks, deck];
-                    if (next.length === 0) next = ['curated'];
+                    const next = toggleActiveDeckSmart(settings.activeDecks, deck);
                     updateSettings({ ...settings, activeDecks: next });
                   }}
                   onSwapKnown={handleSwapKnown}
@@ -586,6 +642,8 @@ export function App() {
                   }
                   onInspectId={inspectId}
                   onInspectHeadword={inspectHeadword}
+                  onShareEntry={setShareEntry}
+                  onSelectCategory={handleSelectCategoryJump}
                 />
               )}
 
@@ -593,6 +651,9 @@ export function App() {
                 <DictionaryView
                   settings={settings}
                   headwordSet={headwordSet}
+                  categoryCounts={report?.categoryCounts}
+                  externalCategory={pendingCategory}
+                  onExternalCategoryApplied={() => setPendingCategory('')}
                   searchFn={search}
                   onToggleIme={(enabled) =>
                     updateSettings({ ...settings, phoneticImeEnabled: enabled })
@@ -602,6 +663,8 @@ export function App() {
                   }
                   onInspectId={inspectId}
                   onInspectHeadword={inspectHeadword}
+                  onSurpriseMe={handleSurpriseMe}
+                  onShareEntry={setShareEntry}
                 />
               )}
 
@@ -613,7 +676,7 @@ export function App() {
                   checkWordleGuess={checkWordleGuess}
                   autocomplete={autocomplete}
                   onInspectId={inspectId}
-                  isOverlayOpen={drawerOpen || settingsOpen}
+                  isOverlayOpen={drawerOpen || settingsOpen || Boolean(shareEntry)}
                 />
               )}
 
@@ -702,6 +765,17 @@ export function App() {
         onInspectHeadword={inspectHeadword}
         onAddToSrs={handleAddToSrs}
         onToggleKnown={handleToggleKnownFromDrawer}
+        onNextRandom={handleNextRandomInDrawer}
+        onShareEntry={setShareEntry}
+        onSelectCategory={handleSelectCategoryJump}
+      />
+
+      {/* Shareable Word Card PNG Modal */}
+      <ShareWordCardModal
+        entry={shareEntry}
+        defaultTheme={settings.theme}
+        lang={lang}
+        onClose={() => setShareEntry(null)}
       />
 
       {/* Settings & Backup Modal */}
@@ -709,6 +783,7 @@ export function App() {
         open={settingsOpen}
         settings={settings}
         report={report}
+        categoryPools={gamePools?.categoryPools}
         onClose={() => setSettingsOpen(false)}
         onUpdateSettings={updateSettings}
         onImported={loadUserPersistence}

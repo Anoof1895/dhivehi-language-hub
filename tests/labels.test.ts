@@ -1,16 +1,21 @@
 import { describe, expect, it } from 'vitest';
 import {
+  CATEGORY_KEYS,
+  CATEGORY_META,
   DIALECT_LABELS,
   WORDCLASS_LABELS,
+  categoryToDeckKey,
+  deckKeyToCategory,
   formatBiLabel,
   formatCount,
+  getDeckBiLabel,
   getUiDirection,
   nextUiLanguage,
   t,
 } from '../src/lib/labels.ts';
 import { formatInterval } from '../src/lib/date.ts';
 
-describe('UI language modes, directionality, and pluralization', () => {
+describe('UI language modes, directionality, pluralization, and category labels', () => {
   it('returns clean English-only labels in en mode without Dhivehi text', () => {
     expect(formatBiLabel(WORDCLASS_LABELS['ނ'], 'en')).toBe('Noun');
     expect(formatBiLabel(WORDCLASS_LABELS['މ'], 'en')).toBe('Verb');
@@ -21,6 +26,18 @@ describe('UI language modes, directionality, and pluralization', () => {
   it('returns Dhivehi-only in dv mode and clean English in en mode', () => {
     expect(formatBiLabel(WORDCLASS_LABELS['ނ'], 'dv')).toBe('ނަން');
     expect(formatBiLabel(WORDCLASS_LABELS['ނ'], 'en')).toBe('Noun');
+  });
+
+  it('provides bilingual labels for all 12 Maldivian categories and Topic Study Decks', () => {
+    expect(CATEGORY_KEYS).toHaveLength(12);
+    for (const cat of CATEGORY_KEYS) {
+      const meta = CATEGORY_META[cat];
+      expect(meta.label.en.length).toBeGreaterThan(2);
+      expect(meta.label.dv.length).toBeGreaterThan(2);
+      const deckKey = categoryToDeckKey(cat);
+      expect(deckKeyToCategory(deckKey)).toBe(cat);
+      expect(formatBiLabel(getDeckBiLabel(deckKey), 'en')).toBe(meta.label.en);
+    }
   });
 
   it('uses ltr direction for en mode and rtl for dv', () => {

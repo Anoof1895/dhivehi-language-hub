@@ -22,6 +22,13 @@ export interface SearchResponse {
   entries: DictionaryEntry[];
 }
 
+export interface RandomEntryOptions {
+  filters?: SearchFilters;
+  excludeIds?: number[];
+  preferRich?: boolean;
+  seed?: number;
+}
+
 interface PendingReq {
   resolve: (v: unknown) => void;
   reject: (e: Error) => void;
@@ -129,6 +136,17 @@ export function useDictionary() {
     []
   );
 
+  const getRandomEntryDetail = useCallback(
+    (options: RandomEntryOptions = {}) =>
+      callWorker<EntryDetailPayload | null>('getRandomEntryDetail', {
+        filters: options.filters,
+        excludeIds: options.excludeIds,
+        preferRich: options.preferRich,
+        seed: options.seed,
+      }),
+    []
+  );
+
   const getByHeadword = useCallback(
     (headword: string) =>
       callWorker<EntryDetailPayload | null>('getByHeadword', { headword }),
@@ -162,6 +180,7 @@ export function useDictionary() {
     search,
     getEntries,
     getEntryDetail,
+    getRandomEntryDetail,
     getByHeadword,
     checkWordleGuess,
     autocomplete,

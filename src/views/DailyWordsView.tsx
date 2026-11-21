@@ -6,8 +6,14 @@ import {
   GitBranch,
   Sparkles,
   BookOpenCheck,
+  Languages,
+  Share2,
+  Compass,
+  ChevronDown,
+  ChevronUp,
 } from 'lucide-react';
 import type {
+  CategoryTag,
   DailyTarget,
   DeckKey,
   DictionaryEntry,
@@ -15,13 +21,18 @@ import type {
 } from '../types/dictionary.ts';
 import type { DailyProgressState } from '../lib/dailyQueue.ts';
 import {
+  CATEGORY_KEYS,
+  CATEGORY_META,
+  CORE_DECK_KEYS,
   DECK_LABELS,
+  categoryToDeckKey,
   formatBiLabel,
   formatCount,
   getUiDirection,
+  isTopicDeckKey,
   t,
 } from '../lib/labels.ts';
-import { Languages } from 'lucide-react';
+import { CategoryIcon } from '../components/CategoryIcon.tsx';
 import { EnglishSummary } from '../components/EnglishSummary.tsx';
 import { MetadataBadges } from '../components/MetadataBadges.tsx';
 import { SenseText } from '../components/SenseText.tsx';
@@ -32,6 +43,7 @@ interface Props {
   dailyEntries: DictionaryEntry[];
   familyLookup: Record<number, DictionaryEntry>;
   headwordSet: Set<string>;
+  categoryPools?: Record<CategoryTag, number[]>;
   loading: boolean;
   onChangeTarget: (target: DailyTarget) => void;
   onToggleDeck: (deck: DeckKey) => void;
@@ -41,9 +53,9 @@ interface Props {
   onToggleEnglish: (enabled: boolean) => void;
   onInspectId: (id: number) => void;
   onInspectHeadword: (hw: string) => void;
+  onShareEntry: (entry: DictionaryEntry) => void;
+  onSelectCategory?: (category: CategoryTag) => void;
 }
-
-const DECK_KEYS: DeckKey[] = ['curated', 'honorific', 'dialect', 'figurative', 'proverb'];
 
 export function DailyWordsView({
   settings,
@@ -51,6 +63,7 @@ export function DailyWordsView({
   dailyEntries,
   familyLookup,
   headwordSet,
+  categoryPools,
   loading,
   onChangeTarget,
   onToggleDeck,
@@ -60,10 +73,15 @@ export function DailyWordsView({
   onToggleEnglish,
   onInspectId,
   onInspectHeadword,
+  onShareEntry,
+  onSelectCategory,
 }: Props) {
   const lang = settings.uiLanguage;
   const textDir = getUiDirection(lang);
   const [expandedFamilies, setExpandedFamilies] = useState<Record<number, boolean>>({});
+  const hasActiveTopicDecks = settings.activeDecks.some((d) => isTopicDeckKey(d));
+  const [showTopicDecks, setShowTopicDecks] = useState(true);
+
   const completedSet = new Set(progress?.completedIds ?? []);
   const completedCount = dailyEntries.filter((e) => completedSet.has(e.id)).length;
   const totalCount = dailyEntries.length || settings.dailyTarget;
@@ -71,7 +89,6 @@ export function DailyWordsView({
   const streak = progress?.streakCount ?? 0;
 
   useEffect(() => {
-    // Expand first word family automatically for discovery
     if (dailyEntries.length > 0 && Object.keys(expandedFamilies).length === 0) {
       setExpandedFamilies({ [dailyEntries[0].id]: true });
     }
@@ -85,12 +102,20 @@ export function DailyWordsView({
           <div>
             <div className="inline-flex items-center gap-1.5 rounded-full bg-[#0D6E6E]/10 px-3 py-1 text-xs font-semibold text-[#0D6E6E] dark:bg-[#2DD4BF]/15 dark:text-[#2DD4BF]">
               <Sparkles className="h-3.5 w-3.5" />
-              <span dir={textDir}>{t('މިއަދުގެ ބަސްތައް', "Today's Learning Set", lang)}</span>
+              <span dir={textDir}>
+                {t('މިއަދުގެ ބަސްތައް', "Today's Learning Set", lang)}
+              </span>
             </div>
-            <h1 dir={textDir} className="font-display-thaana mt-2 text-2xl sm:text-3xl font-bold text-[#142126] dark:text-[#F1F5F9]">
+            <h1
+              dir={textDir}
+              className="font-display-thaana mt-2 text-2xl sm:text-3xl font-bold text-[#142126] dark:text-[#F1F5F9]"
+            >
               {t('ދުވަހުގެ ބަސް ދަސްކުރުން', 'Daily Dhivehi Words', lang)}
             </h1>
-            <p dir={textDir} className="mt-1 text-sm text-[#52636A] dark:text-[#9BB0B8]">
+            <p
+              dir={textDir}
+              className="mt-1 text-sm text-[#52636A] dark:text-[#9BB0B8]"
+            >
               {t(
                 'މޫދު އާއިލާތަކާއެކު ދުވާލަކު 1، 3 ނުވަތަ 5 ބަސް ދަސްކުރައްވާ — އެނގޭ ބަހެއް ނަމަ ވަގުތުން ބަދަލުކޮށްލެވޭނެ.',
                 'Learn 1, 3, or 5 words daily with root-word bundles. Swap any word you already know.',
@@ -104,10 +129,16 @@ export function DailyWordsView({
             <div className="flex items-center gap-2 rounded-2xl border border-[#E4DCCE] bg-[#FAF7F2] px-3.5 py-2 dark:border-[#213840] dark:bg-[#182C33]">
               <Flame className="h-5 w-5 text-[#D95D39] dark:text-[#FB923C]" />
               <div>
-                <div dir={textDir} className="text-[11px] text-[#52636A] dark:text-[#9BB0B8]">
+                <div
+                  dir={textDir}
+                  className="text-[11px] text-[#52636A] dark:text-[#9BB0B8]"
+                >
                   {t('ސްޓްރީކް', 'Streak', lang)}
                 </div>
-                <div dir={textDir} className="text-sm font-bold text-[#142126] dark:text-[#F1F5F9]">
+                <div
+                  dir={textDir}
+                  className="text-sm font-bold text-[#142126] dark:text-[#F1F5F9]"
+                >
                   {lang === 'en' ? formatCount(streak, 'day') : `${streak} ދުވަސް`}
                 </div>
               </div>
@@ -157,51 +188,139 @@ export function DailyWordsView({
           </div>
         </div>
 
-        {/* Active Study Decks */}
-        <div className="mt-4 flex flex-wrap items-center justify-between gap-2 border-t border-[#E4DCCE]/70 pt-3.5 dark:border-[#213840]">
-          <div className="flex flex-wrap items-center gap-1.5">
-            <span className="text-xs font-semibold text-[#52636A] dark:text-[#9BB0B8]">
-              {t('ބަސް ނަގާ ބައިތައް:', 'Decks:', lang)}
-            </span>
-            {DECK_KEYS.map((deck) => {
-              const active = settings.activeDecks.includes(deck);
-              return (
-                <button
-                  key={deck}
-                  type="button"
-                  onClick={() => onToggleDeck(deck)}
-                  className={`thaana-pill cursor-pointer rounded-full border px-2.5 py-0.5 text-xs font-medium transition ${
-                    active
-                      ? 'border-[#0D6E6E] bg-[#0D6E6E]/12 text-[#0D6E6E] dark:border-[#2DD4BF] dark:bg-[#2DD4BF]/15 dark:text-[#2DD4BF]'
-                      : 'border-[#E4DCCE] bg-transparent text-[#52636A] hover:bg-[#F2ECE1] dark:border-[#213840] dark:text-[#9BB0B8]'
-                  }`}
-                >
-                  {formatBiLabel(DECK_LABELS[deck], lang)}
-                </button>
-              );
-            })}
+        {/* Active Study Decks (Core & Register Decks + Topic Study Decks) */}
+        <div className="mt-4 space-y-3 border-t border-[#E4DCCE]/70 pt-3.5 dark:border-[#213840]">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <div className="flex flex-wrap items-center gap-1.5">
+              <span
+                dir={textDir}
+                className="text-xs font-semibold text-[#52636A] dark:text-[#9BB0B8]"
+              >
+                {t('ބަސް ނަގާ ބައިތައް:', 'Study Decks:', lang)}
+              </span>
+              {CORE_DECK_KEYS.map((deck) => {
+                const active = settings.activeDecks.includes(deck);
+                return (
+                  <button
+                    key={deck}
+                    type="button"
+                    aria-pressed={active}
+                    onClick={() => onToggleDeck(deck)}
+                    className={`thaana-pill cursor-pointer rounded-full border px-2.5 py-0.5 text-xs font-medium transition ${
+                      active
+                        ? 'border-[#0D6E6E] bg-[#0D6E6E]/12 text-[#0D6E6E] dark:border-[#2DD4BF] dark:bg-[#2DD4BF]/15 dark:text-[#2DD4BF]'
+                        : 'border-[#E4DCCE] bg-transparent text-[#52636A] hover:bg-[#F2ECE1] dark:border-[#213840] dark:text-[#9BB0B8]'
+                    }`}
+                  >
+                    {formatBiLabel(DECK_LABELS[deck], lang)}
+                  </button>
+                );
+              })}
+
+              <button
+                type="button"
+                onClick={() => setShowTopicDecks((v) => !v)}
+                className={`inline-flex cursor-pointer items-center gap-1 rounded-full border px-2.5 py-1 text-xs font-semibold transition ${
+                  hasActiveTopicDecks
+                    ? 'border-[#D95D39] bg-[#D95D39]/12 text-[#B84524] dark:border-[#FB923C] dark:bg-[#FB923C]/15 dark:text-[#FB923C]'
+                    : 'border-[#E4DCCE] bg-[#FAF7F2] text-[#52636A] hover:border-[#0D6E6E] dark:border-[#213840] dark:bg-[#182C33] dark:text-[#9BB0B8]'
+                }`}
+              >
+                <Compass className="h-3.5 w-3.5" />
+                <span dir={textDir}>
+                  {t('މައުޟޫޢީ ބައިތައް (12)', 'Topic Decks (12)', lang)}
+                </span>
+                {showTopicDecks ? (
+                  <ChevronUp className="h-3 w-3" />
+                ) : (
+                  <ChevronDown className="h-3 w-3" />
+                )}
+              </button>
+            </div>
+
+            <div className="flex items-center gap-1.5">
+              <button
+                type="button"
+                onClick={() => onToggleEnglish(!settings.showEnglish)}
+                className={`inline-flex cursor-pointer items-center gap-1 rounded-xl border px-2.5 py-1 text-xs font-medium transition ${
+                  settings.showEnglish
+                    ? 'border-[#0D6E6E]/40 bg-[#0D6E6E]/10 text-[#0D6E6E] dark:border-[#2DD4BF]/40 dark:bg-[#2DD4BF]/15 dark:text-[#2DD4BF]'
+                    : 'border-[#E4DCCE] bg-[#FAF7F2] text-[#52636A] hover:border-[#0D6E6E] dark:border-[#213840] dark:bg-[#182C33] dark:text-[#9BB0B8]'
+                }`}
+              >
+                <Languages className="h-3.5 w-3.5" />
+                <span>{settings.showEnglish ? 'EN: ON' : 'EN: OFF'}</span>
+              </button>
+              <button
+                type="button"
+                onClick={onRefreshUncompleted}
+                className="inline-flex cursor-pointer items-center gap-1 rounded-xl border border-[#E4DCCE] bg-[#FAF7F2] px-2.5 py-1 text-xs font-medium text-[#52636A] transition hover:border-[#0D6E6E] hover:text-[#0D6E6E] dark:border-[#213840] dark:bg-[#182C33] dark:text-[#9BB0B8] dark:hover:text-[#2DD4BF]"
+              >
+                <RefreshCw className="h-3.5 w-3.5" />
+                <span>{t('އައު ބަސްތަކެއް ގެނޭ', 'Shuffle Unstudied', lang)}</span>
+              </button>
+            </div>
           </div>
 
-          <button
-            type="button"
-            onClick={() => onToggleEnglish(!settings.showEnglish)}
-            className={`inline-flex cursor-pointer items-center gap-1 rounded-xl border px-2.5 py-1 text-xs font-medium transition ${
-              settings.showEnglish
-                ? 'border-[#0D6E6E]/40 bg-[#0D6E6E]/10 text-[#0D6E6E] dark:border-[#2DD4BF]/40 dark:bg-[#2DD4BF]/15 dark:text-[#2DD4BF]'
-                : 'border-[#E4DCCE] bg-[#FAF7F2] text-[#52636A] hover:border-[#0D6E6E] dark:border-[#213840] dark:bg-[#182C33] dark:text-[#9BB0B8]'
-            }`}
-          >
-            <Languages className="h-3.5 w-3.5" />
-            <span>{settings.showEnglish ? 'EN: ON' : 'EN: OFF'}</span>
-          </button>
-          <button
-            type="button"
-            onClick={onRefreshUncompleted}
-            className="inline-flex cursor-pointer items-center gap-1 rounded-xl border border-[#E4DCCE] bg-[#FAF7F2] px-2.5 py-1 text-xs font-medium text-[#52636A] transition hover:border-[#0D6E6E] hover:text-[#0D6E6E] dark:border-[#213840] dark:bg-[#182C33] dark:text-[#9BB0B8] dark:hover:text-[#2DD4BF]"
-          >
-            <RefreshCw className="h-3.5 w-3.5" />
-            <span>{t('އައު ބަސްތަކެއް ގެނޭ', 'Shuffle Unstudied', lang)}</span>
-          </button>
+          {/* Selectable Topic Study Decks Grid */}
+          {showTopicDecks && (
+            <div className="rounded-2xl border border-[#E4DCCE]/80 bg-[#FAF7F2]/80 p-3 dark:border-[#213840] dark:bg-[#0F1E24]">
+              <div className="mb-2 flex items-center justify-between text-[11px] font-semibold text-[#52636A] dark:text-[#9BB0B8]">
+                <span dir={textDir}>
+                  {t(
+                    'ވަކި މައުޟޫޢަކުން ދުވަހުގެ ބަސް ދަސްކުރެއްވުމަށް އިޚްތިޔާރުކުރައްވާ:',
+                    'Choose 1 or more Maldivian Topic Study Decks for your daily words:',
+                    lang
+                  )}
+                </span>
+                {hasActiveTopicDecks && (
+                  <button
+                    type="button"
+                    onClick={() => onToggleDeck('curated')}
+                    className="cursor-pointer text-[#D95D39] hover:underline dark:text-[#FB923C]"
+                  >
+                    {t('މައިގަނޑު ރަދީފަށް ބަދަލުކުރޭ', 'Reset to Core Curated', lang)}
+                  </button>
+                )}
+              </div>
+              <div className="flex flex-wrap gap-1.5">
+                {CATEGORY_KEYS.map((cat) => {
+                  const deckKey = categoryToDeckKey(cat);
+                  const meta = CATEGORY_META[cat];
+                  const active = settings.activeDecks.includes(deckKey);
+                  const count = categoryPools?.[cat]?.length;
+                  return (
+                    <button
+                      key={deckKey}
+                      type="button"
+                      aria-pressed={active}
+                      onClick={() => onToggleDeck(deckKey)}
+                      className={`thaana-pill inline-flex cursor-pointer items-center gap-1.5 rounded-xl border px-2.5 py-1 text-xs font-semibold transition ${
+                        active
+                          ? 'border-[#0D6E6E] bg-[#0D6E6E] text-white shadow-xs dark:border-[#2DD4BF] dark:bg-[#2DD4BF] dark:text-[#0B161A]'
+                          : 'border-[#E4DCCE] bg-white text-[#142126] hover:border-[#0D6E6E]/50 dark:border-[#213840] dark:bg-[#132329] dark:text-[#F1F5F9]'
+                      }`}
+                    >
+                      <CategoryIcon category={cat} className="h-3.5 w-3.5 shrink-0" />
+                      <span dir={textDir}>{formatBiLabel(meta.label, lang)}</span>
+                      {typeof count === 'number' && (
+                        <span
+                          dir="ltr"
+                          className={`rounded-full px-1.5 py-0.2 font-mono text-[10px] ${
+                            active
+                              ? 'bg-white/20 text-white dark:bg-[#0B161A]/20 dark:text-[#0B161A]'
+                              : 'bg-[#F2ECE1] text-[#52636A] dark:bg-[#182C33] dark:text-[#9BB0B8]'
+                          }`}
+                        >
+                          {count.toLocaleString()}
+                        </span>
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
         </div>
       </section>
 
@@ -235,7 +354,10 @@ export function DailyWordsView({
                 }`}
               >
                 {/* Header */}
-                <div dir="rtl" className="flex flex-wrap items-start justify-between gap-3">
+                <div
+                  dir="rtl"
+                  className="flex flex-wrap items-start justify-between gap-3"
+                >
                   <div>
                     <div className="flex items-center gap-2.5">
                       <span className="flex h-7 w-7 items-center justify-center rounded-full bg-[#F2ECE1] text-xs font-bold text-[#0D6E6E] dark:bg-[#182C33] dark:text-[#2DD4BF]">
@@ -264,6 +386,16 @@ export function DailyWordsView({
 
                   {/* Quick Actions */}
                   <div className="flex flex-wrap items-center gap-2" dir="ltr">
+                    <button
+                      type="button"
+                      onClick={() => onShareEntry(entry)}
+                      title={t('ބަސް ކާޑު ޙިއްޞާކުރޭ', 'Share Word Card (PNG)', lang)}
+                      className="inline-flex cursor-pointer items-center gap-1.5 rounded-xl border border-[#E4DCCE] bg-[#FAF7F2] px-3 py-1.5 text-xs font-semibold text-[#52636A] transition hover:border-[#0D6E6E] hover:text-[#0D6E6E] dark:border-[#213840] dark:bg-[#182C33] dark:text-[#9BB0B8] dark:hover:border-[#2DD4BF] dark:hover:text-[#2DD4BF]"
+                    >
+                      <Share2 className="h-3.5 w-3.5" />
+                      <span dir={textDir}>{t('ކާޑު', 'Share Card', lang)}</span>
+                    </button>
+
                     {!isCompleted && (
                       <button
                         type="button"
@@ -271,7 +403,9 @@ export function DailyWordsView({
                         className="inline-flex cursor-pointer items-center gap-1.5 rounded-xl border border-[#E4DCCE] bg-[#FAF7F2] px-3 py-1.5 text-xs font-semibold text-[#52636A] transition hover:border-[#D95D39] hover:text-[#B84524] dark:border-[#213840] dark:bg-[#182C33] dark:text-[#9BB0B8] dark:hover:border-[#FB923C] dark:hover:text-[#FB923C]"
                       >
                         <RefreshCw className="h-3.5 w-3.5" />
-                        <span dir={textDir}>{t('މި ބަސް އެނގޭ (ބަދަލުކުރޭ)', 'Already know this', lang)}</span>
+                        <span dir={textDir}>
+                          {t('މި ބަސް އެނގޭ (ބަދަލުކުރޭ)', 'Already know this', lang)}
+                        </span>
                       </button>
                     )}
 
@@ -288,12 +422,16 @@ export function DailyWordsView({
                       {isCompleted ? (
                         <>
                           <CheckCircle2 className="h-4 w-4" />
-                          <span dir={textDir}>{t('ދަސްވެއްޖެ (FSRS ގައި)', 'Scheduled in FSRS', lang)}</span>
+                          <span dir={textDir}>
+                            {t('ދަސްވެއްޖެ (FSRS ގައި)', 'Scheduled in FSRS', lang)}
+                          </span>
                         </>
                       ) : (
                         <>
                           <BookOpenCheck className="h-4 w-4" />
-                          <span dir={textDir}>{t('ދަސްވެއްޖެ — މުރާޖަޢާއަށް ލާ', 'Learn & Schedule', lang)}</span>
+                          <span dir={textDir}>
+                            {t('ދަސްވެއްޖެ — މުރާޖަޢާއަށް ލާ', 'Learn & Schedule', lang)}
+                          </span>
                         </>
                       )}
                     </button>
@@ -302,13 +440,20 @@ export function DailyWordsView({
 
                 {/* Badges */}
                 <div dir="rtl" className="mt-3">
-                  <MetadataBadges entry={entry} lang={lang} />
+                  <MetadataBadges
+                    entry={entry}
+                    lang={lang}
+                    onSelectCategory={onSelectCategory}
+                  />
                 </div>
 
                 <EnglishSummary entry={entry} showEnglish={settings.showEnglish} />
 
                 {/* Hyperlinked Senses */}
-                <ol dir="rtl" className="mt-4 space-y-2 border-t border-[#E4DCCE]/60 pt-4 dark:border-[#213840]">
+                <ol
+                  dir="rtl"
+                  className="mt-4 space-y-2 border-t border-[#E4DCCE]/60 pt-4 dark:border-[#213840]"
+                >
                   {entry.senses.map((sense, sIdx) => (
                     <li
                       key={sIdx}
@@ -348,7 +493,10 @@ export function DailyWordsView({
                           lang
                         )}
                         {entry.familyRoot && (
-                          <span dir="rtl" className="rounded-md bg-white px-2 py-0.5 text-[11px] text-[#52636A] dark:bg-[#182C33] dark:text-[#9BB0B8]">
+                          <span
+                            dir="rtl"
+                            className="rounded-md bg-white px-2 py-0.5 text-[11px] text-[#52636A] dark:bg-[#182C33] dark:text-[#9BB0B8]"
+                          >
                             {entry.familyRoot}
                           </span>
                         )}
