@@ -145,4 +145,6 @@ export interface UserSettings {
   showRomanization: boolean;
   showEnglish: boolean;
   phoneticImeEnabled: boolean;
+  dailyReminderEnabled?: boolean;
+  dailyReminderTime?: string;
 }

@@ -98,7 +98,7 @@ export function WordInspectorDrawer({
         dir="ltr"
       >
         {/* Top bar */}
-        <div className="flex items-center justify-between border-b border-[#E4DCCE] bg-white/80 px-4 py-3 backdrop-blur dark:border-[#213840] dark:bg-[#132329]/90">
+        <div className="safe-top flex items-center justify-between border-b border-[#E4DCCE] bg-white/80 px-4 py-3 backdrop-blur dark:border-[#213840] dark:bg-[#132329]/90">
           <div className="flex items-center gap-2">
             {trail.length > 1 && (
               <button
@@ -460,7 +460,7 @@ export function WordInspectorDrawer({
         </div>
 
         {/* Sticky Discovery & Share Footer */}
-        <div className="flex items-center justify-between gap-2 border-t border-[#E4DCCE] bg-white/95 px-4 py-3 backdrop-blur dark:border-[#213840] dark:bg-[#132329]/95">
+        <div className="safe-bottom-bar flex items-center justify-between gap-2 border-t border-[#E4DCCE] bg-white/95 px-4 pt-3 backdrop-blur dark:border-[#213840] dark:bg-[#132329]/95">
           {entry ? (
             <button
               type="button"

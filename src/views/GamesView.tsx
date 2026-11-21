@@ -46,6 +46,7 @@ import {
   getMetaValue,
   setMetaValue,
 } from '../storage/db.ts';
+import { triggerHaptic } from '../lib/native.ts';
 
 interface Props {
   settings: UserSettings;
@@ -261,18 +262,21 @@ export function GamesView({
   // Wordle Keyboard Handlers
   const handleWordleConsonant = (ch: string) => {
     if (wordleStatus !== 'playing') return;
+    void triggerHaptic('light');
     setWordleErr(null);
     commitWordleInput(applyWordleConsonant(wordleInputRef.current, ch));
   };
 
   const handleWordleFili = (fili: string) => {
     if (wordleStatus !== 'playing') return;
+    void triggerHaptic('light');
     setWordleErr(null);
     commitWordleInput(applyWordleFili(wordleInputRef.current, fili));
   };
 
   const handleWordleBackspace = () => {
     if (wordleStatus !== 'playing') return;
+    void triggerHaptic('light');
     setWordleErr(null);
     commitWordleInput(applyWordleBackspace(wordleInputRef.current));
   };
@@ -316,6 +320,7 @@ export function GamesView({
     if (wordleStatus !== 'playing' || !wordleTarget || submittingWordleRef.current) return;
     const currentTiles = wordleInputRef.current.tiles;
     if (currentTiles.length !== 4) {
+      void triggerHaptic('warning');
       setWordleErr(t('4 އަކުރު (ސިލަބަލް) ހަމަކުރޭ', 'Enter all 4 Thaana syllables', lang));
       return;
     }
@@ -324,6 +329,7 @@ export function GamesView({
       const guessWord = currentTiles.join('');
       const check = await checkWordleGuess(guessWord);
       if (!check.valid) {
+        void triggerHaptic('warning');
         setWordleErr(
           t('ރަދީފުގައި މި ލަފުޒެއް ނެތް (ފިލި ޗެކްކޮށްލާ)', 'Word not found in 4-syllable Radheef list', lang)
         );
@@ -340,6 +346,8 @@ export function GamesView({
         : lost
         ? 'lost'
         : 'playing';
+
+      void triggerHaptic(won ? 'success' : 'medium');
 
       setWordleGuesses(nextGuesses);
       setWordleEvals(nextEvals);

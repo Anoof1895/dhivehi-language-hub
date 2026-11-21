@@ -15,6 +15,7 @@ import { t } from '../lib/labels.ts';
 import { EnglishSummary } from '../components/EnglishSummary.tsx';
 import { MetadataBadges } from '../components/MetadataBadges.tsx';
 import { SenseText } from '../components/SenseText.tsx';
+import { triggerHaptic } from '../lib/native.ts';
 
 interface Props {
   settings: UserSettings;
@@ -218,7 +219,10 @@ export function ReviewView({
                 <div className="flex flex-wrap items-center justify-center gap-3">
                   <button
                     type="button"
-                    onClick={() => setRevealed(true)}
+                    onClick={() => {
+                      void triggerHaptic('light');
+                      setRevealed(true);
+                    }}
                     className="inline-flex cursor-pointer items-center gap-2 rounded-2xl bg-[#0D6E6E] px-6 py-3 text-sm font-bold text-white transition hover:bg-[#095555] dark:bg-[#2DD4BF] dark:text-[#0B161A]"
                   >
                     <Eye className="h-4 w-4" />
@@ -226,7 +230,10 @@ export function ReviewView({
                   </button>
                   <button
                     type="button"
-                    onClick={() => onMarkKnown(currentEntry.id)}
+                    onClick={() => {
+                      void triggerHaptic('medium');
+                      onMarkKnown(currentEntry.id);
+                    }}
                     className="inline-flex cursor-pointer items-center gap-1.5 rounded-2xl border border-[#E4DCCE] bg-[#FAF7F2] px-4 py-3 text-xs font-semibold text-[#52636A] hover:border-[#D95D39] dark:border-[#213840] dark:bg-[#182C33] dark:text-[#9BB0B8]"
                   >
                     <CheckCircle2 className="h-4 w-4" />
@@ -268,7 +275,10 @@ export function ReviewView({
                         <button
                           key={opt.grade}
                           type="button"
-                          onClick={() => onRateCard(currentEntry.id, opt.grade)}
+                          onClick={() => {
+                            void triggerHaptic('medium');
+                            void onRateCard(currentEntry.id, opt.grade);
+                          }}
                           className={`cursor-pointer rounded-2xl border p-3 text-center transition active:scale-95 ${
                             GRADE_STYLES[opt.grade] ?? ''
                           }`}

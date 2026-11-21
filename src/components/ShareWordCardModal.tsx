@@ -19,6 +19,10 @@ import {
   canvasToPngBlob,
   renderWordCardToCanvas,
 } from '../lib/wordCardCanvas.ts';
+import {
+  canUseNativeOrWebShare,
+  shareWordCardFile,
+} from '../lib/native.ts';
 
 interface Props {
   entry: DictionaryEntry | null;
@@ -71,8 +75,7 @@ export function ShareWordCardModal({
     Boolean(navigator.clipboard?.write) &&
     typeof ClipboardItem !== 'undefined';
 
-  const canNativeShare =
-    typeof navigator !== 'undefined' && typeof navigator.share === 'function';
+  const canNativeShare = canUseNativeOrWebShare();
 
   const handleDownload = async () => {
     if (!canvasRef.current) return;
@@ -111,21 +114,13 @@ export function ShareWordCardModal({
     if (!canvasRef.current) return;
     const blob = await canvasToPngBlob(canvasRef.current);
     if (!blob) return;
-    const file = new File([blob], filename, { type: 'image/png' });
-    if (navigator.canShare?.({ files: [file] })) {
-      try {
-        await navigator.share({
-          title: `${entry.headword} — Dhivehi Language Hub`,
-          text: entry.enGloss
-            ? `${entry.headword} (${entry.romanized}): ${entry.enGloss}`
-            : entry.headword,
-          files: [file],
-        });
-        return;
-      } catch {
-        // User cancelled or share failed; fall back below
-      }
-    }
+    const title = `${entry.headword} — Dhivehi Language Hub`;
+    const text = entry.enGloss
+      ? `${entry.headword} (${entry.romanized}): ${entry.enGloss}`
+      : entry.headword;
+
+    const shared = await shareWordCardFile(blob, filename, title, text);
+    if (shared) return;
     await handleDownload();
   };
 

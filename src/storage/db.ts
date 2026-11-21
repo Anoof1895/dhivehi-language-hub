@@ -60,6 +60,8 @@ export const DEFAULT_SETTINGS: UserSettings = {
   showRomanization: true,
   showEnglish: true,
   phoneticImeEnabled: false,
+  dailyReminderEnabled: false,
+  dailyReminderTime: '09:00',
 };
 
 export const DEFAULT_GAME_STATS: GameStats = {

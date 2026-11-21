@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Dhivehi Language Hub</string>
+    <string name="title_activity_main">Dhivehi Language Hub</string>
+    <string name="package_name">com.dhivehilanguagehub.app</string>
+    <string name="custom_url_scheme">com.dhivehilanguagehub.app</string>
+</resources>

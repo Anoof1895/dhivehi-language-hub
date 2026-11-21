@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react';
-import { X, Download, Upload, Sun, Moon, Languages, Database } from 'lucide-react';
+import { X, Download, Upload, Sun, Moon, Languages, Database, Bell } from 'lucide-react';
 import type {
   CategoryTag,
   DailyTarget,
@@ -21,6 +21,7 @@ import {
 } from '../lib/labels.ts';
 import { toggleActiveDeckSmart } from '../lib/dailyQueue.ts';
 import { exportAllProgress, importAllProgress } from '../storage/db.ts';
+import { syncDailyReminderNotification } from '../lib/native.ts';
 import { CategoryIcon } from './CategoryIcon.tsx';
 
 interface Props {
@@ -44,9 +45,35 @@ export function SettingsModal({
 }: Props) {
   const fileRef = useRef<HTMLInputElement>(null);
   const [statusMsg, setStatusMsg] = useState<string | null>(null);
+  const [reminderMsg, setReminderMsg] = useState<string | null>(null);
   const lang = settings.uiLanguage;
 
   if (!open) return null;
+
+  const reminderEnabled = Boolean(settings.dailyReminderEnabled);
+  const reminderTime = settings.dailyReminderTime ?? '09:00';
+
+  const handleToggleReminder = async (enabled: boolean) => {
+    const res = await syncDailyReminderNotification(enabled, reminderTime, lang);
+    const nextEnabled = res.ok ? enabled : false;
+    onUpdateSettings({
+      ...settings,
+      dailyReminderEnabled: nextEnabled,
+      dailyReminderTime: reminderTime,
+    });
+    setReminderMsg(lang === 'en' ? res.messageEn : res.messageDv);
+  };
+
+  const handleReminderTimeChange = async (nextTime: string) => {
+    onUpdateSettings({
+      ...settings,
+      dailyReminderTime: nextTime,
+    });
+    if (reminderEnabled) {
+      const res = await syncDailyReminderNotification(true, nextTime, lang);
+      setReminderMsg(lang === 'en' ? res.messageEn : res.messageDv);
+    }
+  };
 
   const toggleDeck = (deck: DeckKey) => {
     const next = toggleActiveDeckSmart(settings.activeDecks, deck);
@@ -297,6 +324,66 @@ export function SettingsModal({
               className="h-4 w-4 accent-[#0D6E6E]"
             />
           </label>
+
+          {/* Daily Study Reminder (Native Local Notifications) */}
+          <div className="rounded-2xl border border-[#E4DCCE] bg-white p-4 dark:border-[#213840] dark:bg-[#132329]">
+            <div className="flex items-center justify-between gap-3">
+              <div className="flex items-center gap-2">
+                <Bell className="h-4 w-4 shrink-0 text-[#0D6E6E] dark:text-[#2DD4BF]" />
+                <div>
+                  <div
+                    dir={textDir}
+                    className="text-sm font-semibold text-[#142126] dark:text-[#F1F5F9]"
+                  >
+                    {t('ދުވަހުގެ ހަނދާންކޮށްދިނުން', 'Daily Study Reminder', lang)}
+                  </div>
+                  <div
+                    dir={textDir}
+                    className="text-xs text-[#52636A] dark:text-[#9BB0B8]"
+                  >
+                    {t(
+                      'ދުވަހުގެ ބަސްތައް ދަސްކުރުމަށް ނޮޓިފިކޭޝަން ފޮނުވާ',
+                      'Get a daily notification when your Dhivehi words are ready',
+                      lang
+                    )}
+                  </div>
+                </div>
+              </div>
+              <input
+                type="checkbox"
+                aria-label={t('ދުވަހުގެ ހަނދާންކޮށްދިނުން', 'Daily Study Reminder', lang)}
+                checked={reminderEnabled}
+                onChange={(e) => void handleToggleReminder(e.target.checked)}
+                className="h-4 w-4 cursor-pointer accent-[#0D6E6E]"
+              />
+            </div>
+
+            <div className="mt-3 flex flex-wrap items-center justify-between gap-2 border-t border-[#E4DCCE]/70 pt-3 dark:border-[#213840]">
+              <label
+                htmlFor="daily-reminder-time"
+                dir={textDir}
+                className="text-xs font-medium text-[#52636A] dark:text-[#9BB0B8]"
+              >
+                {t('ހަނދާންކޮށްދޭ ގަޑި:', 'Reminder Time:', lang)}
+              </label>
+              <input
+                id="daily-reminder-time"
+                type="time"
+                value={reminderTime}
+                onChange={(e) => void handleReminderTimeChange(e.target.value)}
+                className="cursor-pointer rounded-xl border border-[#E4DCCE] bg-[#FAF7F2] px-3 py-1 text-xs font-semibold text-[#142126] dark:border-[#213840] dark:bg-[#182C33] dark:text-[#F1F5F9]"
+              />
+            </div>
+
+            {reminderMsg && (
+              <p
+                dir={textDir}
+                className="mt-2 text-xs font-medium text-[#0D6E6E] dark:text-[#2DD4BF]"
+              >
+                {reminderMsg}
+              </p>
+            )}
+          </div>
 
           {/* JSON Backup */}
           <div className="rounded-2xl border border-[#E4DCCE] bg-white p-4 dark:border-[#213840] dark:bg-[#132329]">

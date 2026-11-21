@@ -1,4 +1,5 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { App as CapApp } from '@capacitor/app';
 import {
   BookOpen,
   Search,
@@ -9,6 +10,11 @@ import {
   Moon,
   Languages,
 } from 'lucide-react';
+import {
+  isNativePlatform,
+  resolveBackButtonAction,
+  syncNativeStatusBar,
+} from './lib/native.ts';
 import type {
   CategoryTag,
   DailyTarget,
@@ -126,12 +132,58 @@ export function App() {
     loadUserPersistence();
   }, [loadUserPersistence]);
 
-  // Apply theme class to <html>
+  // Apply theme class to <html> and sync native Android Status Bar
   useEffect(() => {
     const root = document.documentElement;
     if (settings.theme === 'dark') root.classList.add('dark');
     else root.classList.remove('dark');
+    void syncNativeStatusBar(settings.theme);
   }, [settings.theme]);
+
+  // Android Hardware Back Button handler:
+  // Closes open modal / WordInspectorDrawer first, then navigates to Daily, before exiting app
+  const backStateRef = useRef({
+    hasShareModal: false,
+    hasSettingsModal: false,
+    hasInspectorDrawer: false,
+    activeTab: 'daily' as NavTab,
+  });
+  backStateRef.current = {
+    hasShareModal: shareEntry !== null,
+    hasSettingsModal: settingsOpen,
+    hasInspectorDrawer: drawerOpen,
+    activeTab: tab,
+  };
+
+  useEffect(() => {
+    if (!isNativePlatform()) return;
+
+    const listenerPromise = CapApp.addListener('backButton', () => {
+      const action = resolveBackButtonAction(backStateRef.current);
+      switch (action) {
+        case 'close-share':
+          setShareEntry(null);
+          break;
+        case 'close-settings':
+          setSettingsOpen(false);
+          break;
+        case 'close-drawer':
+          setDrawerOpen(false);
+          setInspectorTrail([]);
+          break;
+        case 'navigate-daily':
+          setTab('daily');
+          break;
+        case 'exit-app':
+          void CapApp.exitApp();
+          break;
+      }
+    });
+
+    return () => {
+      void listenerPromise.then((handle) => handle.remove());
+    };
+  }, []);
 
   // Keep document shell direction stationary (ltr) while updating lang and title
   useEffect(() => {
@@ -461,7 +513,7 @@ export function App() {
       dir="ltr"
     >
       {/* Top Header */}
-      <header className="sticky top-0 z-30 border-b border-[#E4DCCE] bg-[#FAF7F2]/90 backdrop-blur-md dark:border-[#213840] dark:bg-[#0B161A]/90">
+      <header className="safe-top sticky top-0 z-30 border-b border-[#E4DCCE] bg-[#FAF7F2]/90 backdrop-blur-md dark:border-[#213840] dark:bg-[#0B161A]/90">
         <div className="mx-auto flex max-w-6xl items-center justify-between gap-2 px-3 py-2.5 sm:px-6 sm:py-3">
           <div className="flex min-w-0 items-center gap-2 sm:gap-3">
             <img src="/icon.svg" alt="" className="h-8 w-8 sm:h-9 sm:w-9 shrink-0 rounded-xl shadow-xs" />
@@ -565,7 +617,7 @@ export function App() {
       </header>
 
       {/* Main Layout (Desktop RTL Sidebar + Content) */}
-      <div className="mx-auto flex max-w-6xl gap-6 px-4 pb-24 pt-5 sm:px-6 md:pb-10">
+      <div className="safe-bottom-content mx-auto flex max-w-6xl gap-6 px-4 pt-5 sm:px-6">
         <aside className="hidden w-56 shrink-0 md:block">
           <nav className="sticky top-22 space-y-1.5 rounded-3xl border border-[#E4DCCE] bg-white p-2.5 shadow-xs dark:border-[#213840] dark:bg-[#132329]">
             {navItems.map((item) => {
@@ -712,7 +764,7 @@ export function App() {
       </div>
 
       {/* Mobile Bottom Navigation */}
-      <nav className="fixed inset-x-0 bottom-0 z-30 border-t border-[#E4DCCE] bg-white/95 px-2 py-1.5 backdrop-blur-md md:hidden dark:border-[#213840] dark:bg-[#132329]/95">
+      <nav className="safe-bottom-nav fixed inset-x-0 bottom-0 z-30 border-t border-[#E4DCCE] bg-white/95 px-2 pt-1.5 backdrop-blur-md md:hidden dark:border-[#213840] dark:bg-[#132329]/95">
         <div className="grid grid-cols-4 gap-1">
           {navItems.map((item) => {
             const Icon = item.icon;
