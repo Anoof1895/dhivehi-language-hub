@@ -9,11 +9,13 @@ import {
   Sun,
   Moon,
   Languages,
+  ArrowUp,
 } from 'lucide-react';
 import {
   isNativePlatform,
   resolveBackButtonAction,
   syncNativeStatusBar,
+  triggerHaptic,
 } from './lib/native.ts';
 import type {
   CategoryTag,
@@ -111,6 +113,36 @@ export function App() {
   // Settings Modal state
   const [settingsOpen, setSettingsOpen] = useState(false);
 
+  // Floating Scroll-to-Top state (visible when scrolled > 400px)
+  const [showScrollTop, setShowScrollTop] = useState(false);
+
+  const scrollToTopSmooth = useCallback(() => {
+    void triggerHaptic('light');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }, []);
+
+  const handleSelectNavTab = useCallback(
+    (nextTab: NavTab) => {
+      if (tab === nextTab) {
+        scrollToTopSmooth();
+      } else {
+        void triggerHaptic('light');
+        setTab(nextTab);
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      }
+    },
+    [tab, scrollToTopSmooth]
+  );
+
+  useEffect(() => {
+    const onScroll = () => {
+      setShowScrollTop(window.scrollY > 400);
+    };
+    window.addEventListener('scroll', onScroll, { passive: true });
+    onScroll();
+    return () => window.removeEventListener('scroll', onScroll);
+  }, []);
+
   const lang = settings.uiLanguage;
   const dateKey = getMaleDateKey();
 
@@ -190,7 +222,7 @@ export function App() {
     const root = document.documentElement;
     root.dir = 'ltr';
     root.lang = lang === 'en' ? 'en' : 'dv';
-    document.title = lang === 'en' ? 'Dhivehi Language Hub' : 'ދިވެހި ބަހުގެ މަރުކަޒު';
+    document.title = lang === 'en' ? 'Koshaaru' : 'ކޮށާރު';
   }, [lang]);
 
   const knownSet = useMemo(() => new Set(knownIds), [knownIds]);
@@ -515,14 +547,19 @@ export function App() {
       {/* Top Header */}
       <header className="safe-top sticky top-0 z-30 border-b border-[#E4DCCE] bg-[#FAF7F2]/90 backdrop-blur-md dark:border-[#213840] dark:bg-[#0B161A]/90">
         <div className="mx-auto flex max-w-6xl items-center justify-between gap-2 px-3 py-2.5 sm:px-6 sm:py-3">
-          <div className="flex min-w-0 items-center gap-2 sm:gap-3">
+          <button
+            type="button"
+            onClick={scrollToTopSmooth}
+            aria-label={t('ކޮށާރު — މައްޗަށް ދޭ', 'Koshaaru — Scroll to top', lang)}
+            className="flex min-w-0 cursor-pointer items-center gap-2.5 sm:gap-3 rounded-xl text-left transition hover:opacity-90"
+          >
             <img src="/icon.svg" alt="" className="h-8 w-8 sm:h-9 sm:w-9 shrink-0 rounded-xl shadow-xs" />
             <div className="min-w-0 text-left">
               <div
                 dir={textDir}
-                className="font-display-thaana min-h-6 sm:min-h-7 whitespace-nowrap text-left text-[15px] sm:text-lg font-bold leading-6 sm:leading-7 text-[#142126] dark:text-[#F1F5F9]"
+                className="font-display-thaana min-h-6 sm:min-h-7 whitespace-nowrap text-left text-base sm:text-lg font-bold leading-6 sm:leading-7 text-[#142126] dark:text-[#F1F5F9]"
               >
-                {t('ދިވެހި ބަހުގެ މަރުކަޒު', 'Dhivehi Language Hub', lang)}
+                {t('ކޮށާރު', 'Koshaaru', lang)}
               </div>
               <div
                 dir={textDir}
@@ -530,12 +567,12 @@ export function App() {
               >
                 {report
                   ? lang === 'en'
-                    ? `${report.canonicalEntryCount.toLocaleString()} words · Radheef`
-                    : `${report.canonicalEntryCount.toLocaleString()} ލަފުޒު · ރަދީފު`
-                  : t('ރަދީފު ލޯޑުވަނީ...', 'Loading Radheef...', lang)}
+                    ? `${report.canonicalEntryCount.toLocaleString()} Dhivehi words`
+                    : `${report.canonicalEntryCount.toLocaleString()} ދިވެހި ލަފުޒު`
+                  : t('ބަސްތައް ލޯޑުވަނީ...', 'Loading dictionary...', lang)}
               </div>
             </div>
-          </div>
+          </button>
 
           <div className="flex shrink-0 items-center gap-1 sm:gap-2">
             {/* 2-way Segmented Language Switcher (Desktop/Tablet) */}
@@ -627,7 +664,7 @@ export function App() {
                 <button
                   key={item.key}
                   type="button"
-                  onClick={() => setTab(item.key)}
+                  onClick={() => handleSelectNavTab(item.key)}
                   className={`flex min-h-[42px] w-full cursor-pointer items-center justify-between rounded-2xl px-3.5 py-2 text-sm font-semibold transition ${
                     active
                       ? 'bg-[#0D6E6E] text-white dark:bg-[#2DD4BF] dark:text-[#0B161A]'
@@ -763,6 +800,21 @@ export function App() {
         </main>
       </div>
 
+      {/* Floating Back-to-Top Button (fades in when scrolled > 400px) */}
+      <button
+        type="button"
+        onClick={scrollToTopSmooth}
+        aria-label={t('މައްޗަށް ދޭ', 'Back to top', lang)}
+        title={t('މައްޗަށް ދޭ', 'Back to top', lang)}
+        className={`fixed right-4 bottom-[calc(4.75rem+env(safe-area-inset-bottom,0px))] z-25 flex h-11 w-11 cursor-pointer items-center justify-center rounded-full border border-[#E4DCCE] bg-[#0D6E6E] text-white shadow-lg transition-all duration-200 hover:bg-[#095555] active:scale-95 md:right-6 md:bottom-6 dark:border-[#213840] dark:bg-[#2DD4BF] dark:text-[#0B161A] dark:hover:bg-[#14B8A6] ${
+          showScrollTop && !drawerOpen && !settingsOpen && !shareEntry
+            ? 'translate-y-0 opacity-100'
+            : 'pointer-events-none translate-y-3 opacity-0'
+        }`}
+      >
+        <ArrowUp className="h-5 w-5" />
+      </button>
+
       {/* Mobile Bottom Navigation */}
       <nav className="safe-bottom-nav fixed inset-x-0 bottom-0 z-30 border-t border-[#E4DCCE] bg-white/95 px-2 pt-1.5 backdrop-blur-md md:hidden dark:border-[#213840] dark:bg-[#132329]/95">
         <div className="grid grid-cols-4 gap-1">
@@ -773,7 +825,7 @@ export function App() {
               <button
                 key={item.key}
                 type="button"
-                onClick={() => setTab(item.key)}
+                onClick={() => handleSelectNavTab(item.key)}
                 className={`relative flex cursor-pointer flex-col items-center justify-center gap-0.5 rounded-2xl py-2 text-[11px] font-semibold transition ${
                   active
                     ? 'bg-[#0D6E6E]/12 text-[#0D6E6E] dark:bg-[#2DD4BF]/15 dark:text-[#2DD4BF]'

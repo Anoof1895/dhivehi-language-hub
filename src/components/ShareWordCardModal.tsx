@@ -114,7 +114,7 @@ export function ShareWordCardModal({
     if (!canvasRef.current) return;
     const blob = await canvasToPngBlob(canvasRef.current);
     if (!blob) return;
-    const title = `${entry.headword} — Dhivehi Language Hub`;
+    const title = `${entry.headword} — Koshaaru`;
     const text = entry.enGloss
       ? `${entry.headword} (${entry.romanized}): ${entry.enGloss}`
       : entry.headword;

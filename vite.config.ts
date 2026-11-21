@@ -18,9 +18,9 @@ export default defineConfig({
         'fonts/Faruma.ttf',
       ],
       manifest: {
-        name: 'ދިވެހި ބަހުގެ މަރުކަޒު | Dhivehi Language Hub',
-        short_name: 'ބަސްފޮތް',
-        description: 'RTL Dhivehi Language Hub, Hyperlinked Radheef Reverse-Dictionary, Daily Words FSRS & Word Games',
+        name: 'Koshaaru',
+        short_name: 'Koshaaru',
+        description: 'Koshaaru (ކޮށާރު) — Offline-First Dhivehi Dictionary, Daily Words FSRS & Thaana Word Games',
         theme_color: '#0D6E6E',
         background_color: '#FAF7F2',
         display: 'standalone',

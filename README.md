@@ -1,6 +1,6 @@
-# Dhivehi Language Hub (ދިވެހި ބަހުގެ މަރުކަޒު)
+# Koshaaru (ކޮށާރު)
 
-An offline-first Progressive Web App (PWA) for exploring the Dhivehi language, built around a hyperlinked **Radheef** dictionary, FSRS spaced repetition, daily vocabulary decks, and Thaana word games.
+An offline-first Progressive Web App (PWA) and native Android app for exploring the Dhivehi language, built around a hyperlinked 38,719-word Dhivehi dictionary, FSRS spaced repetition, daily vocabulary decks, and Thaana word games.
 
 ## Features
 

@@ -272,13 +272,13 @@ export async function renderWordCardToCanvas(
 
   ctx.direction = 'ltr';
   ctx.textAlign = 'left';
-  ctx.font = `700 24px ${fontStack}`;
+  ctx.font = `700 26px ${fontStack}`;
   ctx.fillStyle = palette.ink;
-  ctx.fillText('Dhivehi Language Hub', padX + 64, cursorY - 2);
+  ctx.fillText('Koshaaru', padX + 64, cursorY - 2);
 
   ctx.font = `500 18px ${fontStack}`;
   ctx.fillStyle = palette.muted;
-  ctx.fillText('ދިވެހި ބަހުގެ މަރުކަޒު · Radheef Dictionary', padX + 64, cursorY + 23);
+  ctx.fillText('ކޮށާރު · Dhivehi Dictionary', padX + 64, cursorY + 23);
 
   // 4. Metadata Chips Row (Wordclass, Topic Categories, Dialect/Register)
   cursorY += 68;
@@ -464,13 +464,13 @@ export async function renderWordCardToCanvas(
   ctx.textAlign = 'left';
   ctx.font = `600 20px ${fontStack}`;
   ctx.fillStyle = palette.muted;
-  ctx.fillText('Dhivehi Language Hub', padX, footerTopY + 42);
+  ctx.fillText('Koshaaru', padX, footerTopY + 42);
 
   ctx.direction = 'rtl';
   ctx.textAlign = 'right';
   ctx.font = `600 22px ${fontStack}`;
   ctx.fillStyle = palette.lagoon;
-  ctx.fillText('ދިވެހި ބަހުގެ މަރުކަޒު', padX + contentW, footerTopY + 42);
+  ctx.fillText('ކޮށާރު', padX + contentW, footerTopY + 42);
 }
 
 export function canvasToPngBlob(canvas: HTMLCanvasElement): Promise<Blob | null> {

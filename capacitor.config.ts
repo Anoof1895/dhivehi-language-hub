@@ -2,7 +2,7 @@ import type { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
   appId: 'com.dhivehilanguagehub.app',
-  appName: 'Dhivehi Language Hub',
+  appName: 'Koshaaru',
   webDir: 'dist',
   server: {
     androidScheme: 'https',

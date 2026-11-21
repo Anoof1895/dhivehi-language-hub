@@ -248,7 +248,7 @@ export async function syncDailyReminderNotification(
       notifications: [
         {
           id: DAILY_REMINDER_NOTIFICATION_ID,
-          title: 'ދިވެހި ބަހުގެ މަރުކަޒު · Dhivehi Language Hub',
+          title: 'ކޮށާރު · Koshaaru',
           body: 'Your Daily Dhivehi Words are ready! · މިއަދުގެ ދިވެހި ބަސްތައް ތައްޔާރު!',
           schedule: {
             on: { hour, minute },
